@@ -25,12 +25,29 @@ namespace PasteIt.Core
                 new PatternScore(@"\bconsole\.log\s*\(", 2),
                 new PatternScore(@"\bexport\s+(default|const|function|class)\b", 2)
             }),
+            new LanguageRule("TypeScript", ".ts", 6, new[]
+            {
+                new PatternScore(@"\binterface\s+\w+", 4),
+                new PatternScore(@"\btype\s+\w+\s*=", 4),
+                new PatternScore(@"\b(enum|implements)\s+\w+", 3),
+                new PatternScore(@":[ \t]*(string|number|boolean|any|unknown|never|void|Record<|Array<)", 3),
+                new PatternScore(@"\bimport\s+.+\s+from\s+['""]", 2),
+                new PatternScore(@"\bexport\s+(type|interface|class|const|function)\b", 2)
+            }),
             new LanguageRule("C#", ".cs", 6, new[]
             {
                 new PatternScore(@"\busing\s+System\b", 4),
                 new PatternScore(@"\bnamespace\s+\w+", 3),
                 new PatternScore(@"\bpublic\s+class\s+\w+", 4),
                 new PatternScore(@"\bConsole\.Write(Line)?\s*\(", 2)
+            }),
+            new LanguageRule("Java", ".java", 6, new[]
+            {
+                new PatternScore(@"\bpublic\s+class\s+\w+", 3),
+                new PatternScore(@"\bpublic\s+static\s+void\s+main\s*\(", 5),
+                new PatternScore(@"\bSystem\.out\.println\s*\(", 4),
+                new PatternScore(@"\bimport\s+java\.\w+", 3),
+                new PatternScore(@"\bpackage\s+[a-zA-Z_][\w\.]*\s*;", 3)
             }),
             new LanguageRule("C++", ".cpp", 6, new[]
             {
@@ -39,12 +56,35 @@ namespace PasteIt.Core
                 new PatternScore(@"\bstd::", 2),
                 new PatternScore(@"\bcout\s*<<", 2)
             }),
+            new LanguageRule("C", ".c", 6, new[]
+            {
+                new PatternScore(@"#include\s*<stdio\.h>", 5),
+                new PatternScore(@"\bint\s+main\s*\(", 4),
+                new PatternScore(@"\bprintf\s*\(", 3),
+                new PatternScore(@"\bscanf\s*\(", 2)
+            }),
             new LanguageRule("HTML", ".html", 6, new[]
             {
                 new PatternScore(@"<html[\s>]", 4),
                 new PatternScore(@"<body[\s>]", 3),
                 new PatternScore(@"<div[\s>]", 2),
                 new PatternScore(@"<!DOCTYPE\s+html>", 4)
+            }),
+            new LanguageRule("CSS", ".css", 7, new[]
+            {
+                new PatternScore(@"\.[A-Za-z_][\w\-]*\s*\{", 3),
+                new PatternScore(@"#[A-Za-z_][\w\-]*\s*\{", 2),
+                new PatternScore(@"\b(color|margin|padding|display|font-family|background(-color)?|justify-content|align-items|grid-template-columns)\s*:", 3),
+                new PatternScore(@"@media\s*\(", 4),
+                new PatternScore(@":root\s*\{", 4),
+                new PatternScore(@"--[\w\-]+\s*:", 4)
+            }),
+            new LanguageRule("XML", ".xml", 6, new[]
+            {
+                new PatternScore(@"<\?xml\s+version\s*=", 5),
+                new PatternScore(@"</[A-Za-z_][\w\.\-:]*>", 3),
+                new PatternScore(@"<[A-Za-z_][\w\.\-:]*[^>]*>", 2),
+                new PatternScore(@"\sxmlns(:\w+)?=""[^""]+""", 3)
             }),
             new LanguageRule("SQL", ".sql", 6, new[]
             {
@@ -67,6 +107,55 @@ namespace PasteIt.Core
                 new PatternScore(@"\blet\s+mut\b", 3),
                 new PatternScore(@"\bimpl\s+\w+", 3),
                 new PatternScore(@"::", 1)
+            }),
+            new LanguageRule("Kotlin", ".kt", 6, new[]
+            {
+                new PatternScore(@"\bfun\s+\w+\s*\(", 4),
+                new PatternScore(@"\b(val|var)\s+\w+\s*:\s*\w+", 4),
+                new PatternScore(@"\bdata\s+class\s+\w+", 3),
+                new PatternScore(@"\boverride\s+fun\b", 3),
+                new PatternScore(@"\bprintln\s*\(", 2)
+            }),
+            new LanguageRule("Swift", ".swift", 6, new[]
+            {
+                new PatternScore(@"\bimport\s+Foundation\b", 4),
+                new PatternScore(@"\bfunc\s+\w+\s*\(", 4),
+                new PatternScore(@"\b(let|var)\s+\w+\s*:\s*\w+", 3),
+                new PatternScore(@"\bguard\s+let\b", 3),
+                new PatternScore(@"\bprint\s*\(", 2)
+            }),
+            new LanguageRule("PHP", ".php", 6, new[]
+            {
+                new PatternScore(@"<\?php", 5),
+                new PatternScore(@"\$\w+\s*=", 3),
+                new PatternScore(@"\becho\b", 2),
+                new PatternScore(@"->\w+", 2),
+                new PatternScore(@"\bnamespace\s+[\w\\]+", 2)
+            }),
+            new LanguageRule("Ruby", ".rb", 7, new[]
+            {
+                new PatternScore(@"\bdef\s+\w+", 3),
+                new PatternScore(@"\bend\b", 3),
+                new PatternScore(@"\bputs\s+['""]", 3),
+                new PatternScore(@":[\w\-]+\s*=>", 2),
+                new PatternScore(@"@\w+", 2)
+            }),
+            new LanguageRule("Shell", ".sh", 6, new[]
+            {
+                new PatternScore(@"^#!\s*/bin/(ba)?sh", 5, RegexOptions.Multiline),
+                new PatternScore(@"\becho\s+['""]?.+", 2),
+                new PatternScore(@"\$\([^)]+\)", 2),
+                new PatternScore(@"\bif\s+\[.+\]\s*;\s*then", 3),
+                new PatternScore(@"\bfi\b", 2),
+                new PatternScore(@"\bexport\s+\w+=", 2)
+            }),
+            new LanguageRule("PowerShell", ".ps1", 6, new[]
+            {
+                new PatternScore(@"\b(Get|Set|New|Remove|Write)-[A-Za-z]+\b", 4),
+                new PatternScore(@"\$\w+\s*=", 2),
+                new PatternScore(@"\bparam\s*\(", 3),
+                new PatternScore(@"\|\s*Where-Object\b", 2),
+                new PatternScore(@"\|\s*ForEach-Object\b", 2)
             })
         };
 
@@ -175,7 +264,11 @@ namespace PasteIt.Core
                 text.Contains("::") ||
                 text.Contains("#include") ||
                 text.Contains("using ") ||
-                text.Contains("def ");
+                text.Contains("def ") ||
+                text.Contains("<?php") ||
+                text.Contains("#!/bin/bash") ||
+                text.Contains("Get-") ||
+                text.Contains("param(");
 
             return !hasLineBreak && containsCommonPunctuation && !containsCodeTokens;
         }
@@ -238,4 +331,3 @@ namespace PasteIt.Core
         }
     }
 }
-

@@ -13,7 +13,8 @@ namespace PasteItExtension
 {
     [ComVisible(true)]
     [Guid("E6FB1156-2AA7-4E08-B889-9F411F944DA2")]
-    [COMServerAssociation(AssociationType.Directory, AssociationType.DirectoryBackground)]
+    [COMServerAssociation(AssociationType.Directory)]
+    [COMServerAssociation(AssociationType.DirectoryBackground)]
     public class PasteItExtension : SharpContextMenu
     {
         protected override bool CanShowMenu()

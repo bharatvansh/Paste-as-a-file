@@ -22,7 +22,7 @@ PasteIt is a Windows clipboard utility that saves clipboard content directly as 
 - Image clipboard (`CF_BITMAP` / `CF_DIB`) -> `.png`
 - URL text -> `.url`
 - HTML clipboard (`CF_HTML`) -> `.html`
-- Code text -> detected extension (`.py`, `.js`, `.cs`, `.cpp`, `.json`, `.sql`, `.go`, `.rs`, `.html`)
+- Code text -> detected extension (`.py`, `.js`, `.ts`, `.cs`, `.java`, `.cpp`, `.c`, `.json`, `.sql`, `.go`, `.rs`, `.kt`, `.swift`, `.php`, `.rb`, `.sh`, `.ps1`, `.xml`, `.html`, `.css`)
 - Plain text -> `.txt`
 - File drop list (`CF_HDROP`) -> ignored (already files)
 
