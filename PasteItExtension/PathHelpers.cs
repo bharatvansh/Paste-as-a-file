@@ -1,0 +1,73 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using Microsoft.Win32;
+
+namespace PasteItExtension
+{
+    internal static class PathHelpers
+    {
+        public static string? ResolvePasteItExecutablePath()
+        {
+            var candidates = new List<string>();
+
+            var envPath = Environment.GetEnvironmentVariable("PASTEIT_EXE_PATH");
+            if (!string.IsNullOrWhiteSpace(envPath))
+            {
+                candidates.Add(envPath);
+            }
+
+            AddRegistryCandidates(candidates, Registry.CurrentUser);
+            AddRegistryCandidates(candidates, Registry.LocalMachine);
+
+            var extensionDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(extensionDirectory))
+            {
+                candidates.Add(Path.Combine(extensionDirectory, "PasteIt.exe"));
+                candidates.Add(Path.GetFullPath(Path.Combine(extensionDirectory, "..", "PasteIt.exe")));
+                candidates.Add(Path.GetFullPath(Path.Combine(extensionDirectory, "..", "..", "PasteIt", "bin", "Release", "PasteIt.exe")));
+                candidates.Add(Path.GetFullPath(Path.Combine(extensionDirectory, "..", "..", "PasteIt", "bin", "Debug", "PasteIt.exe")));
+            }
+
+            return candidates
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Select(path => path.Trim())
+                .FirstOrDefault(File.Exists);
+        }
+
+        private static void AddRegistryCandidates(ICollection<string> candidates, RegistryKey baseKey)
+        {
+            var keyPaths = new[]
+            {
+                @"Software\PasteIt",
+                @"Software\PasteIt\Install"
+            };
+
+            foreach (var keyPath in keyPaths)
+            {
+                using (var key = baseKey.OpenSubKey(keyPath))
+                {
+                    if (key == null)
+                    {
+                        continue;
+                    }
+
+                    var executablePath = key.GetValue("ExecutablePath") as string;
+                    if (!string.IsNullOrWhiteSpace(executablePath))
+                    {
+                        candidates.Add(executablePath);
+                    }
+
+                    var installPath = key.GetValue("InstallPath") as string;
+                    if (!string.IsNullOrWhiteSpace(installPath))
+                    {
+                        candidates.Add(Path.Combine(installPath, "PasteIt.exe"));
+                    }
+                }
+            }
+        }
+    }
+}
+
