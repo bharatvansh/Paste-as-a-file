@@ -34,6 +34,19 @@ namespace PasteIt.Core
                 }
             }
 
+            // Text-based detection: prioritize plain text over HTML.
+            // When copying from a browser, the clipboard contains BOTH CF_HTML
+            // and CF_TEXT. The user almost always wants the plain text, not the
+            // raw HTML wrapper. Only use HTML if there is no plain text available.
+            if (Clipboard.ContainsText(TextDataFormat.UnicodeText))
+            {
+                var text = Clipboard.GetText(TextDataFormat.UnicodeText);
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    return DetectFromText(text);
+                }
+            }
+
             if (Clipboard.ContainsData(DataFormats.Html))
             {
                 var html = Clipboard.GetText(TextDataFormat.Html);
@@ -41,12 +54,6 @@ namespace PasteIt.Core
                 {
                     return ClipboardContent.Html(html);
                 }
-            }
-
-            if (Clipboard.ContainsText(TextDataFormat.UnicodeText))
-            {
-                var text = Clipboard.GetText(TextDataFormat.UnicodeText);
-                return DetectFromText(text);
             }
 
             return ClipboardContent.None();
@@ -95,4 +102,3 @@ namespace PasteIt.Core
         }
     }
 }
-

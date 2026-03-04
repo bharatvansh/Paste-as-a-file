@@ -78,6 +78,7 @@ namespace PasteItExtension
 
         private string ResolveTargetDirectory()
         {
+            // When right-clicking on a specific folder, SelectedItemPaths has the folder path.
             if (SelectedItemPaths != null && SelectedItemPaths.Any())
             {
                 foreach (var selectedPath in SelectedItemPaths)
@@ -93,6 +94,21 @@ namespace PasteItExtension
                         return parent;
                     }
                 }
+            }
+
+            // When right-clicking on the background of a folder, FolderPath
+            // gives us the directory the user is currently looking at.
+            try
+            {
+                var folderPath = FolderPath;
+                if (!string.IsNullOrWhiteSpace(folderPath) && Directory.Exists(folderPath))
+                {
+                    return folderPath;
+                }
+            }
+            catch
+            {
+                // FolderPath may not be available in all contexts.
             }
 
             return ExplorerHelper.ResolveTargetDirectory(null);
