@@ -11,6 +11,8 @@ OutputDir=Output
 OutputBaseFilename=PasteIt_Setup
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
+DirExistsWarning=no
+SetupIconFile=PasteIt.Core\Resources\logo.ico
 
 [Files]
 ; Main service

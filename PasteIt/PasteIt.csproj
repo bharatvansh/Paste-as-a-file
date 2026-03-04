@@ -5,6 +5,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>PasteIt</AssemblyName>
     <RootNamespace>PasteIt</RootNamespace>
+    <ApplicationIcon>..\PasteIt.Core\Resources\logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

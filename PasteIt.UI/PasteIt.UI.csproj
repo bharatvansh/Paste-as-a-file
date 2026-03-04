@@ -5,6 +5,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>PasteIt.UI</AssemblyName>
     <RootNamespace>PasteIt.UI</RootNamespace>
+    <ApplicationIcon>..\PasteIt.Core\Resources\logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
