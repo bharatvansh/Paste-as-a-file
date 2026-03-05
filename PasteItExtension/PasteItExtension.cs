@@ -37,14 +37,7 @@ namespace PasteItExtension
 
         protected override ContextMenuStrip CreateMenu()
         {
-            var detector = new ClipboardDetector();
-            string detectedLabel;
-
-            using (var content = detector.Detect())
-            {
-                detectedLabel = BuildDetectedLabel(content);
-            }
-
+            var menu = new ContextMenuStrip();
             var logo = LogoProvider.GetLogo();
             var menuIcon = logo != null ? ScaleImage(logo, 16, 16) : null;
 
@@ -53,15 +46,33 @@ namespace PasteItExtension
                 Image = menuIcon
             };
 
-            var detectedTypeMenuItem = new ToolStripMenuItem("Paste as " + detectedLabel)
+            var detector = new ClipboardDetector();
+            using (var content = detector.Detect())
             {
-                Image = menuIcon
-            };
+                var resolver = new ExtensionResolver();
+                var options = resolver.Resolve(content);
 
-            detectedTypeMenuItem.Click += (sender, args) => ExecutePaste();
-            rootMenuItem.DropDownItems.Add(detectedTypeMenuItem);
+                foreach (var option in options)
+                {
+                    var itemText = "Paste as " + option.DisplayText;
+                    var menuItem = new ToolStripMenuItem(itemText)
+                    {
+                        Image = menuIcon
+                    };
 
-            var menu = new ContextMenuStrip();
+                    if (option.IsDefault)
+                    {
+                        menuItem.Font = new Font(menuItem.Font, FontStyle.Bold);
+                    }
+
+                    // Capture option extension for the click handler
+                    var ext = option.Extension; 
+                    menuItem.Click += (sender, args) => ExecutePaste(ext);
+                    
+                    rootMenuItem.DropDownItems.Add(menuItem);
+                }
+            }
+
             menu.Items.Add(rootMenuItem);
             return menu;
         }
@@ -91,7 +102,7 @@ namespace PasteItExtension
             return destImage;
         }
 
-        private void ExecutePaste()
+        private void ExecutePaste(string extension)
         {
             var targetDirectory = ResolveTargetDirectory();
             var executablePath = PathHelpers.ResolvePasteItExecutablePath();
@@ -100,7 +111,7 @@ namespace PasteItExtension
                 return;
             }
 
-            var arguments = $"--paste --target {QuoteForWindowsCommandLine(targetDirectory)}";
+            var arguments = $"--paste --target {QuoteForWindowsCommandLine(targetDirectory)} --ext {QuoteForWindowsCommandLine(extension)}";
             var startInfo = new ProcessStartInfo
             {
                 FileName = executablePath,
@@ -149,25 +160,6 @@ namespace PasteItExtension
             }
 
             return ExplorerHelper.ResolveTargetDirectory(null);
-        }
-
-        private static string BuildDetectedLabel(ClipboardContent content)
-        {
-            switch (content.Type)
-            {
-                case ClipboardContentType.Image:
-                    return "Image (.png)";
-                case ClipboardContentType.Url:
-                    return "URL (.url)";
-                case ClipboardContentType.Html:
-                    return "HTML (.html)";
-                case ClipboardContentType.Code:
-                    return $"{content.SuggestedLanguage ?? "Code"} ({content.SuggestedExtension ?? ".txt"})";
-                case ClipboardContentType.Text:
-                    return "Text (.txt)";
-                default:
-                    return "File";
-            }
         }
 
         private static string QuoteForWindowsCommandLine(string value)

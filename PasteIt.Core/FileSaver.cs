@@ -9,7 +9,7 @@ namespace PasteIt.Core
     {
         private readonly Encoding _encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
-        public FileSaveResult Save(ClipboardContent content, string? targetDirectory, DateTime? now = null)
+        public FileSaveResult Save(ClipboardContent content, string? targetDirectory, DateTime? now = null, string? extensionOverride = null)
         {
             if (content == null)
             {
@@ -22,7 +22,12 @@ namespace PasteIt.Core
             }
 
             var directory = ResolveTargetDirectory(targetDirectory);
-            var extension = ResolveExtension(content);
+            
+            // If an extension override is provided, use it. Otherwise, fallback to old default logic for backwards compatibility.
+            var extension = !string.IsNullOrWhiteSpace(extensionOverride) 
+                ? extensionOverride! 
+                : ResolveExtension(content);
+                
             var path = GenerateUniquePath(directory, extension, now ?? DateTime.Now);
 
             switch (content.Type)
@@ -89,6 +94,7 @@ namespace PasteIt.Core
 
         private static string ResolveExtension(ClipboardContent content)
         {
+            // Fallback resolver. The UI/ShellExtension will mostly pass the explicit extension from now on.
             switch (content.Type)
             {
                 case ClipboardContentType.Image:

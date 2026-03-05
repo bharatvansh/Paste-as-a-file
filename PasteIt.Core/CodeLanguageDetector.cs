@@ -156,6 +156,61 @@ namespace PasteIt.Core
                 new PatternScore(@"\bparam\s*\(", 3),
                 new PatternScore(@"\|\s*Where-Object\b", 2),
                 new PatternScore(@"\|\s*ForEach-Object\b", 2)
+            }),
+            new LanguageRule("Dart", ".dart", 6, new[]
+            {
+                new PatternScore(@"\bimport\s+['""]package:", 4),
+                new PatternScore(@"\bvoid\s+main\s*\(\s*\)", 4),
+                new PatternScore(@"\bclass\s+\w+\s+extends\s+\w+", 3),
+                new PatternScore(@"\bWidget\s+build\s*\(", 5),
+                new PatternScore(@"\bprint\s*\(", 2)
+            }),
+            new LanguageRule("Markdown", ".md", 6, new[]
+            {
+                new PatternScore(@"^#+\s+", 3, RegexOptions.Multiline),
+                new PatternScore(@"^\s*[-*]\s+", 2, RegexOptions.Multiline),
+                new PatternScore(@"\[.+?\]\(.+?\)", 3),
+                new PatternScore(@"```\w*", 4),
+                new PatternScore(@"^\s*>+\s+", 2, RegexOptions.Multiline)
+            }),
+            new LanguageRule("TOML", ".toml", 6, new[]
+            {
+                new PatternScore(@"^\[[a-zA-Z0-9_\-\.]+\]\s*$", 4, RegexOptions.Multiline),
+                new PatternScore(@"^[a-zA-Z0-9_\-]+[ \t]*=[ \t]*", 2, RegexOptions.Multiline),
+                new PatternScore(@"^\[\[[a-zA-Z0-9_\-\.]+\]\]\s*$", 5, RegexOptions.Multiline)
+            }),
+            new LanguageRule("JSX", ".jsx", 7, new[]
+            {
+                new PatternScore(@"\bimport\s+React", 3),
+                new PatternScore(@"<[A-Z][A-Za-z0-9_]*", 3),
+                new PatternScore(@"className=", 4),
+                new PatternScore(@"\bexport\s+(default\s+)?function", 2),
+                new PatternScore(@"\b(const|let)\s+\w+", 2)
+            }),
+            new LanguageRule("TSX", ".tsx", 7, new[]
+            {
+                new PatternScore(@"\bimport\s+React", 3),
+                new PatternScore(@"<[A-Z][A-Za-z0-9_]*", 3),
+                new PatternScore(@"className=", 4),
+                new PatternScore(@"\binterface\s+\w+", 3),
+                new PatternScore(@"\btype\s+\w+\s*=", 3),
+                new PatternScore(@":[ \t]*(string|number|boolean|any|React\.FC)", 2)
+            }),
+            new LanguageRule("Batch", ".bat", 6, new[]
+            {
+                new PatternScore(@"@echo\s+off\b", 5, RegexOptions.IgnoreCase),
+                new PatternScore(@"\bset\s+\w+=", 3, RegexOptions.IgnoreCase),
+                new PatternScore(@"\bif\s+(not\s+)?exist\b", 4, RegexOptions.IgnoreCase),
+                new PatternScore(@"\bgoto\s+:\w+", 3, RegexOptions.IgnoreCase),
+                new PatternScore(@"^:[a-zA-Z0-9_]+\s*$", 2, RegexOptions.Multiline)
+            }),
+            new LanguageRule("Cmd Shell", ".cmd", 6, new[]
+            {
+                new PatternScore(@"@echo\s+off\b", 5, RegexOptions.IgnoreCase),
+                new PatternScore(@"\bset\s+\w+=", 3, RegexOptions.IgnoreCase),
+                new PatternScore(@"\bif\s+(not\s+)?exist\b", 4, RegexOptions.IgnoreCase),
+                new PatternScore(@"\bgoto\s+:\w+", 3, RegexOptions.IgnoreCase),
+                new PatternScore(@"^:[a-zA-Z0-9_]+\s*$", 2, RegexOptions.Multiline)
             })
         };
 

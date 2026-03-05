@@ -13,6 +13,8 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 DirExistsWarning=no
 SetupIconFile=PasteIt.Core\Resources\logo.ico
+CloseApplications=force
+RestartApplications=yes
 
 [Files]
 ; Main service

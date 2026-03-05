@@ -23,7 +23,7 @@ namespace PasteIt
                 return;
             }
 
-            PasteCommand.Execute(preferredTargetDirectory: null, _toast);
+            PasteCommand.Execute(null, null, _toast);
         }
 
         protected override void ExitThreadCore()

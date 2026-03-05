@@ -5,7 +5,7 @@ namespace PasteIt
 {
     internal static class PasteCommand
     {
-        public static int Execute(string? preferredTargetDirectory, ToastNotification? toast)
+        public static int Execute(string? preferredTargetDirectory, string? extensionOverride, ToastNotification? toast)
         {
             try
             {
@@ -26,7 +26,7 @@ namespace PasteIt
 
                     var targetDirectory = ExplorerHelper.ResolveTargetDirectory(preferredTargetDirectory);
                     var saver = new FileSaver();
-                    var saveResult = saver.Save(content, targetDirectory);
+                    var saveResult = saver.Save(content, targetDirectory, null, extensionOverride);
 
                     RecordHistory(content, saveResult);
 

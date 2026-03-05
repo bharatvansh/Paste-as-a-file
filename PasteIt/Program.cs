@@ -16,9 +16,10 @@ namespace PasteIt
             if (HasArg(args, "--paste"))
             {
                 var targetDirectory = ReadArgValue(args, "--target");
+                var extensionOverride = ReadArgValue(args, "--ext");
                 using (var toast = new ToastNotification())
                 {
-                    return PasteCommand.Execute(targetDirectory, toast);
+                    return PasteCommand.Execute(targetDirectory, extensionOverride, toast);
                 }
             }
 

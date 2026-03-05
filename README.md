@@ -1,92 +1,46 @@
 # PasteIt
 
-PasteIt is an open-source Windows clipboard utility that saves the current contents of your clipboard directly as a file in the folder you are currently looking at.
+**PasteIt** is a Windows utility that allows you to paste the content of your clipboard directly as a new file in Windows Explorer. Instead of manually creating a file, opening it, pasting the content, and saving it, you can simply right-click in any directory and choose "Paste as File".
+
+PasteIt intelligently detects the clipboard content type:
+- **Plain Text**: Saved as `.txt` files.
+- **Code snippets**: The custom-built language detector identifies nearly 20 languages (Python, JavaScript, TypeScript, C#, Java, C++, C, HTML, CSS, XML, SQL, Go, Rust, Kotlin, Swift, PHP, Ruby, Shell scripts, PowerShell, and JSON) and automatically applies the correct file extension (e.g., `.js`, `.py`, `.sql`).
+- **Images**: Saved automatically as `.png` files.
+- **URLs / Links**: Saved as `.url` Windows Internet shortcuts.
+- **HTML data**: Saved as `.html` pages.
 
 ## Features
 
-- **Explorer Integration:** Adds an instant `Paste as File` item to the Windows Right-Click Context Menu.
-- **Global Hotkey:** Runs silently in the background, listening for `Ctrl + Shift + V`.
-- **Smart Automatic Detection:** Detects the clipboard content type and saves using the correct file extension.
-  - Image payloads (`CF_BITMAP` / `CF_DIB`) become `.png` images.
-  - Formatted Web Links become `.url` shortcuts.
-  - Code text intelligently guesses the language (`.py`, `.js`, `.ts`, `.cs`, `.java`, `.json`, `.sql`, etc.).
-  - Plain text defaults to `.txt` files.
-- **Smart Naming:** Generates automatic filenames like `clipboard_2026-02-14_001.py`.
-- **Notifications:** Brief Windows confirmation pop-ups ensure you know the file was successfully saved.
+- **Context Menu Integration**: Right-click in any folder or on any folder background in Windows Explorer to find the "Paste as File" and dynamic "Paste as [Detected Type]" option.
+- **Smart Content Detection**: Parses the Windows Clipboard prioritizing the exact content the user actually intended (differentiating plain text from rich text, handling code, finding images, etc).
+- **History Tracking**: Automatically keeps a searchable local history of your pasted items, providing previews for text/code and recording saved file locations.
+- **Silent Operation**: Operates quickly through a background CLI executable that parses the request, dumps the file, raises a sleek Windows Toast Notification, and exits. 
+- **Settings & History UI**: View paste history and manage application settings through the robust WPF-based UI.
 
----
+## Architecture
 
-## 🚀 Easy Installation (For Users)
+The project is built on the .NET Framework 4.8 and is divided into four main projects:
 
-The easiest way to install PasteIt is using our pre-built setup file.
+- **`PasteIt.Core`**: The shared logic library. Contains the core engine logic for evaluating clipboard content (`ClipboardDetector`), language detection (`CodeLanguageDetector`), saving files intelligently without overwriting others (`FileSaver`), and parsing the current Windows Explorer COM objects to locate the active working directory (`ExplorerHelper`).
+- **`PasteIt` (Service / CLI)**: A hidden background executor. Depending on its arguments, it will either run continuously as a service (listening for hotkeys via a hook) or execute a single fast paste operation triggered by the Windows Explorer shell.
+- **`PasteItExtension`**: A Windows Shell Extension built over SharpShell. It resolves the user's right-click context (whether selecting an empty space or a directory icon) and triggers the core `PasteIt` CLI with the correct underlying folder path.
+- **`PasteIt.UI`**: A WPF client designed for viewing your paste history and modifying the application's configuration.
 
-1. Download or generate the `PasteIt_Setup.exe` installer.
-2. Double-click the installer and follow the prompt.
-3. The installer will automatically:
-   - Install the required files to `C:\Program Files\PasteIt`.
-   - Register the Windows Explorer Right-Click Menu.
-   - Configure the background global hotkey to start automatically when you boot Windows.
-   - Launch the application so you can start pasting immediately!
+## Installation
 
-*To completely remove PasteIt, simply navigate to "Add or Remove Programs" in your Windows Settings and choose Uninstall.*
+An automated installer approach is provided out of the box leveraging [Inno Setup](https://jrsoftware.org/isinfo.php).
 
----
+1. Execute the `build_installer.ps1` PowerShell script.
+2. The script compiles the entire `.sln` solution via `msbuild` and delegates the packaging to Inno Setup (which uses the `PasteIt.iss` script).
+3. Wait for the build to finish. The generated installer will be located in the `Output/` directory as `PasteIt_Setup.exe`.
+4. Run `PasteIt_Setup.exe`. The installer handles copying the necessary files, running `regasm.exe` to register the COM shell extensions correctly in the Windows registry, and launching the background PasteIt listening service.
 
-## 🛠️ Building from Source (For Developers)
+## Building manually
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page]. If you want to contribute to the tool or compile it yourself, here is how.
+**Prerequisites:**
+- Visual Studio 2022 (or MSBuild) with the **.NET Framework 4.8** targeting pack.
+- Inno Setup installed in your path (if you want to package the installer).
 
-### Project Structure
-
-- `PasteIt.Core`: The core logic for clipboard detection, programming language heuristics, and file saving.
-- `PasteIt`: The main executable (`.exe`) that listens as a background service or accepts one-shot `--paste` commands.
-- `PasteItExtension`: A `SharpShell` COM library (`.dll`) that hooks into the Windows Context Menu.
-- `PasteIt.Core.Tests`: The unit tests for code detection and file save behavior.
-
-### Requirements
-- Windows OS
-- .NET Framework 4.8 Developer Pack
-- MSBuild / .NET CLI (or Visual Studio 2022)
-- [Inno Setup 6](https://jrsoftware.org/isinfo.php) (Only required if you want to generate the Installer)
-
-### Compiling the Solution
-
-You can easily build the `PasteIt.sln` solution via the command line:
-
-```powershell
-dotnet build .\PasteIt.sln -c Release
-```
-
-### Generating the Installer
-
-We have provided an automated script that compiles the code and generates the final `PasteIt_Setup.exe` inside an `/Output` folder:
-
-```powershell
-powershell.exe -ExecutionPolicy Bypass -File .\build_installer.ps1
-```
-
-### Manual Testing
-
-You can run the executable in one-shot paste mode to test logic without starting the listener:
-
-```powershell
-.\PasteIt\bin\Release\net48\PasteIt.exe --paste --target "C:\Users\<you>\Desktop"
-```
-
-Run the unit tests using:
-```powershell
-dotnet test .\PasteIt.Core.Tests\PasteIt.Core.Tests.csproj
-```
-
-### Manual Shell Extension Registration
-
-If you don't use the installer and want to test the right-click menu during development, build `PasteItExtension.dll`, then register with `regasm` (run an Administrator PowerShell):
-
-```powershell
-& "$env:windir\Microsoft.NET\Framework64\v4.0.30319\regasm.exe" `
-  ".\PasteItExtension\bin\Release\net48\PasteItExtension.dll" /codebase
-```
-
-## License
-
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+1. Clone or download the repository.
+2. Open `PasteIt.sln` in Visual Studio and build the solution (`Ctrl+Shift+B`).
+3. If debugging the Shell Extension layer, you will need to manually register `PasteItExtension.dll` for COM Interop using `regasm.exe /codebase`.
