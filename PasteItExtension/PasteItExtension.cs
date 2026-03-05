@@ -20,57 +20,90 @@ namespace PasteItExtension
     {
         protected override bool CanShowMenu()
         {
-            try
-            {
-                var detector = new ClipboardDetector();
-                using (var content = detector.Detect())
-                {
-                    return content.Type != ClipboardContentType.None &&
-                           content.Type != ClipboardContentType.FileDropList;
-                }
-            }
-            catch
-            {
-                return false;
-            }
+            return true;
         }
 
         protected override ContextMenuStrip CreateMenu()
         {
             var menu = new ContextMenuStrip();
-            var logo = LogoProvider.GetLogo();
-            var menuIcon = logo != null ? ScaleImage(logo, 16, 16) : null;
-
-            var rootMenuItem = new ToolStripMenuItem("Paste as File")
+            var rootMenuItem = new ToolStripMenuItem("Paste as File");
+            
+            try
             {
-                Image = menuIcon
-            };
+                var logo = LogoProvider.GetLogo();
+                var menuIcon = logo != null ? ScaleImage(logo, 16, 16) : null;
+                rootMenuItem.Image = menuIcon;
 
-            var detector = new ClipboardDetector();
-            using (var content = detector.Detect())
-            {
-                var resolver = new ExtensionResolver();
-                var options = resolver.Resolve(content);
-
-                foreach (var option in options)
+                // Add paste-format items only when clipboard has pasteable content.
+                try
                 {
-                    var itemText = "Paste as " + option.DisplayText;
-                    var menuItem = new ToolStripMenuItem(itemText)
+                    var detector = new ClipboardDetector();
+                    using (var content = detector.Detect())
                     {
-                        Image = menuIcon
-                    };
+                        if (content != null && 
+                            content.Type != ClipboardContentType.None &&
+                            content.Type != ClipboardContentType.FileDropList)
+                        {
+                            var resolver = new ExtensionResolver();
+                            var options = resolver.Resolve(content);
 
-                    if (option.IsDefault)
-                    {
-                        menuItem.Font = new Font(menuItem.Font, FontStyle.Bold);
+                            if (options != null && options.Any())
+                            {
+                                foreach (var option in options)
+                                {
+                                    var itemText = "Paste as " + option.DisplayText;
+                                    var menuItem = new ToolStripMenuItem(itemText)
+                                    {
+                                        Image = menuIcon
+                                    };
+
+                                    if (option.IsDefault)
+                                    {
+                                        menuItem.Font = new Font(menuItem.Font, FontStyle.Bold);
+                                    }
+
+                                    var ext = option.Extension;
+                                    menuItem.Click += (sender, args) => ExecutePaste(ext);
+
+                                    rootMenuItem.DropDownItems.Add(menuItem);
+                                }
+
+                                rootMenuItem.DropDownItems.Add(new ToolStripSeparator());
+                            }
+                        }
                     }
-
-                    // Capture option extension for the click handler
-                    var ext = option.Extension; 
-                    menuItem.Click += (sender, args) => ExecutePaste(ext);
-                    
-                    rootMenuItem.DropDownItems.Add(menuItem);
                 }
+                catch
+                {
+                    // If clipboard detection fails or throws, just skip paste items.
+                }
+
+                // Always show Settings and History items.
+                var historyItem = new ToolStripMenuItem("History")
+                {
+                    Image = menuIcon
+                };
+                historyItem.Click += (sender, args) => LaunchUI("history");
+                rootMenuItem.DropDownItems.Add(historyItem);
+
+                var settingsItem = new ToolStripMenuItem("Settings")
+                {
+                    Image = menuIcon
+                };
+                settingsItem.Click += (sender, args) => LaunchUI("settings");
+                rootMenuItem.DropDownItems.Add(settingsItem);
+            }
+            catch
+            {
+                // Global fallback in case ANYTHING above throws an exception (e.g. LogoProvider).
+                // Ensure we at least return a basic menu instead of crashing the shell extension.
+                var historyItem = new ToolStripMenuItem("History");
+                historyItem.Click += (sender, args) => LaunchUI("history");
+                rootMenuItem.DropDownItems.Add(historyItem);
+
+                var settingsItem = new ToolStripMenuItem("Settings");
+                settingsItem.Click += (sender, args) => LaunchUI("settings");
+                rootMenuItem.DropDownItems.Add(settingsItem);
             }
 
             menu.Items.Add(rootMenuItem);
@@ -119,6 +152,24 @@ namespace PasteItExtension
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Hidden
+            };
+
+            Process.Start(startInfo);
+        }
+
+        private static void LaunchUI(string view)
+        {
+            var executablePath = PathHelpers.ResolvePasteItUIExecutablePath();
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                return;
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = executablePath,
+                Arguments = $"--view {view}",
+                UseShellExecute = false
             };
 
             Process.Start(startInfo);

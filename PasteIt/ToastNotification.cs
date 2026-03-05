@@ -14,10 +14,18 @@ namespace PasteIt
         {
             _notifyIcon = new NotifyIcon
             {
-                Visible = true,
+                Visible = false,
                 Icon = SystemIcons.Application,
                 Text = "PasteIt"
             };
+
+            EventHandler hideIcon = (s, e) =>
+            {
+                if (!_disposed) _notifyIcon.Visible = false;
+            };
+
+            _notifyIcon.BalloonTipClosed += hideIcon;
+            _notifyIcon.BalloonTipClicked += hideIcon;
         }
 
         public void ShowSuccess(string displayType, string filePath)
@@ -38,10 +46,11 @@ namespace PasteIt
                 return;
             }
 
+            _notifyIcon.Visible = true;
             _notifyIcon.BalloonTipTitle = title;
             _notifyIcon.BalloonTipText = message;
             _notifyIcon.BalloonTipIcon = icon;
-            _notifyIcon.ShowBalloonTip(2500);
+            _notifyIcon.ShowBalloonTip(3000);
         }
 
         public void Dispose()

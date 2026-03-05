@@ -19,6 +19,12 @@ namespace PasteIt.UI
             InitializeComponent();
             LoadHistory();
             LoadSettings();
+
+            // If launched with --view settings, switch to Settings tab.
+            if (string.Equals(App.RequestedView, "settings", System.StringComparison.OrdinalIgnoreCase))
+            {
+                BtnSettings_Click(this, new RoutedEventArgs());
+            }
         }
 
         // --- Navigation ---

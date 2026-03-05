@@ -37,6 +37,42 @@ namespace PasteItExtension
                 .FirstOrDefault(File.Exists);
         }
 
+        public static string? ResolvePasteItUIExecutablePath()
+        {
+            // The UI executable lives alongside PasteIt.exe, so derive its
+            // location from the resolved PasteIt.exe path when possible.
+            var pasteItExe = ResolvePasteItExecutablePath();
+            if (!string.IsNullOrWhiteSpace(pasteItExe))
+            {
+                var dir = Path.GetDirectoryName(pasteItExe);
+                if (!string.IsNullOrWhiteSpace(dir))
+                {
+                    var uiPath = Path.Combine(dir, "PasteIt.UI.exe");
+                    if (File.Exists(uiPath))
+                    {
+                        return uiPath;
+                    }
+                }
+            }
+
+            // Fallback: look relative to the extension DLL itself.
+            var extensionDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(extensionDirectory))
+            {
+                var candidates = new[]
+                {
+                    Path.Combine(extensionDirectory, "PasteIt.UI.exe"),
+                    Path.GetFullPath(Path.Combine(extensionDirectory, "..", "PasteIt.UI.exe")),
+                    Path.GetFullPath(Path.Combine(extensionDirectory, "..", "..", "PasteIt.UI", "bin", "Release", "PasteIt.UI.exe")),
+                    Path.GetFullPath(Path.Combine(extensionDirectory, "..", "..", "PasteIt.UI", "bin", "Debug", "PasteIt.UI.exe")),
+                };
+
+                return candidates.FirstOrDefault(File.Exists);
+            }
+
+            return null;
+        }
+
         private static void AddRegistryCandidates(ICollection<string> candidates, RegistryKey baseKey)
         {
             var keyPaths = new[]
