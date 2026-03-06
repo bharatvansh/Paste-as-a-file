@@ -1,53 +1,95 @@
 # PasteIt
 
-**PasteIt** is a Windows utility that allows you to paste the content of your clipboard directly as a new file in Windows Explorer. Instead of manually creating a file, opening it, pasting the content, and saving it, you can simply right-click in any directory and choose "Paste as File".
+**PasteIt** is a Windows utility that lets you save clipboard content directly as a file from Windows Explorer. You can trigger it from the Explorer right-click menu or with the global `Ctrl+Shift+V` hotkey when Explorer is focused.
 
-PasteIt currently targets **Windows x64** systems.
+PasteIt currently targets **Windows x64** and is built on **.NET Framework 4.8**.
 
-PasteIt intelligently detects the clipboard content type:
-- **Plain Text**: Saved as `.txt` files.
-- **Code snippets**: The custom-built language detector identifies nearly 20 languages (Python, JavaScript, TypeScript, C#, Java, C++, C, HTML, CSS, XML, SQL, Go, Rust, Kotlin, Swift, PHP, Ruby, Shell scripts, PowerShell, and JSON) and automatically applies the correct file extension (e.g., `.js`, `.py`, `.sql`).
+## What It Can Paste
+
+PasteIt detects the clipboard content type and offers matching file extensions in the Explorer context menu:
+
+- **Plain text**: Saved as `.txt`, with `.md` also offered for markdown-like content.
+- **Code snippets / structured text**: Detects many formats including Python, JavaScript, TypeScript, C#, Java, C/C++, HTML, CSS, XML, SQL, Go, Rust, Kotlin, Swift, PHP, Ruby, Shell, PowerShell, Dart, JSON, Markdown, TOML, JSX, TSX, batch, and cmd.
 - **Images**: Offers `.png` by default, plus `.jpg`, `.webp`, `.bmp`, `.gif`, `.tiff`, and `.ico`.
-- **Video files**: Detects a single copied video file from the clipboard and saves it in its original format. When `ffmpeg` is available on `PATH` or configured in Settings, it can also convert between common formats like `.mp4`, `.mov`, `.avi`, `.mkv`, `.webm`, `.wmv`, `.m4v`, and `.mpeg`.
-- **URLs / Links**: Saved as `.url` Windows Internet shortcuts.
-- **HTML data**: Saved as `.html` pages.
+- **Audio**: Saves raw clipboard audio as `.wav` by default, with `.mp3`, `.flac`, `.ogg`, and `.aac` also available. If the clipboard contains a single copied audio file, PasteIt preserves its original format.
+- **Video files**: Detects a single copied video file and saves it in its original format. If `ffmpeg` is on `PATH` or configured in Settings, PasteIt can also convert between `.mp4`, `.mov`, `.avi`, `.mkv`, `.webm`, `.wmv`, `.m4v`, `.mpg`, and `.mpeg`.
+- **URLs / links**: Saved as `.url` Windows Internet shortcuts.
+- **HTML**: Saved as `.html`, with `.htm` and `.txt` also offered.
+
+If the clipboard already contains regular files, PasteIt intentionally does nothing and lets normal file paste behavior remain unchanged.
 
 ## Features
 
-- **Context Menu Integration**: Right-click in any folder or on any folder background in Windows Explorer to find the "Paste as File" menu and its dynamic format options for the detected clipboard content.
-- **Smart Content Detection**: Parses the Windows Clipboard prioritizing the exact content the user actually intended (differentiating plain text from rich text, handling code, finding images, etc).
-- **History Tracking**: Optionally keeps a searchable local history of your pasted items, providing previews for text/code and recording saved file locations.
-- **Silent Operation**: Operates quickly through a background CLI executable that parses the request, dumps the file, raises a sleek Windows Toast Notification, and exits. 
-- **Settings & History UI**: View paste history and manage application settings through the robust WPF-based UI.
+- **Explorer context menu integration**: Adds a `Paste as File` menu for folder backgrounds and directories.
+- **Explorer-aware hotkey**: `Ctrl+Shift+V` pastes into the currently focused Explorer folder.
+- **Dynamic format options**: The menu changes based on the current clipboard contents.
+- **History UI**: Stores paste history locally and shows previews for text-based entries plus file metadata for binary content.
+- **Settings UI**: Configure history retention, filename prefix, default save location, and optional `ffmpeg` path.
+- **Safe file naming**: Creates timestamped filenames and avoids overwriting existing files.
+- **Toast notifications**: Shows success and error feedback after each paste.
 
-## Architecture
+## Solution Layout
 
-The project is built on the .NET Framework 4.8 and is divided into four main projects:
+The solution currently contains five projects:
 
-- **`PasteIt.Core`**: The shared logic library. Contains the core engine logic for evaluating clipboard content (`ClipboardDetector`), language detection (`CodeLanguageDetector`), saving files intelligently without overwriting others (`FileSaver`), and parsing the current Windows Explorer COM objects to locate the active working directory (`ExplorerHelper`).
-- **`PasteIt` (Service / CLI)**: A hidden background executor. Depending on its arguments, it will either run continuously as a service (listening for hotkeys via a hook) or execute a single fast paste operation triggered by the Windows Explorer shell.
-- **`PasteItExtension`**: A Windows Shell Extension built over SharpShell. It resolves the user's right-click context (whether selecting an empty space or a directory icon) and triggers the core `PasteIt` CLI with the correct underlying folder path.
-- **`PasteIt.UI`**: A WPF client designed for viewing your paste history and modifying the application's configuration.
+- **`PasteIt.Core`**: Clipboard detection, language detection, extension resolution, file saving, history management, settings management, Explorer folder resolution, and startup registration.
+- **`PasteIt`**: Background WinForms process that handles the `Ctrl+Shift+V` hotkey, executes paste operations, and registers or unregisters the shell extension.
+- **`PasteItExtension`**: SharpShell-based Windows Explorer context menu extension.
+- **`PasteIt.UI`**: WPF desktop app for viewing history and editing settings.
+- **`PasteIt.Core.Tests`**: xUnit test project covering the core behavior.
 
 ## Installation
 
-An automated installer approach is provided out of the box leveraging [Inno Setup](https://jrsoftware.org/isinfo.php).
+An Inno Setup installer is included.
 
-1. Execute the `build_installer.ps1` PowerShell script.
-2. The script compiles the entire `.sln` solution via `dotnet build` and delegates packaging to Inno Setup 6 using the `PasteIt.iss` script.
-3. Wait for the build to finish. The generated installer will be located in the `Output/` directory as `PasteIt_Setup.exe`.
-4. Run `PasteIt_Setup.exe` as an administrator on a Windows x64 machine. The installer copies the application files, registers the shell extension, and launches PasteIt once under your desktop user account so it can configure per-user startup settings.
+1. Run `build_installer.ps1`.
+2. The script builds `PasteIt.sln` in `Release` mode and then compiles `PasteIt.iss` with Inno Setup 6.
+3. The installer is generated at `Output/PasteIt_Setup.exe`.
+4. Run `Output/PasteIt_Setup.exe` as Administrator on a Windows x64 machine.
 
-Paste history is stored locally under your user profile when history is enabled in Settings. You can disable history or startup-on-login from the built-in UI at any time.
+The installer copies the binaries, registers the shell extension, and launches `PasteIt.exe --service` once as the desktop user so startup registration happens under the correct user profile.
 
-## Building manually
+## Building And Testing
 
-**Prerequisites:**
+**Prerequisites**
+
 - Windows x64
-- .NET SDK with support for building **.NET Framework 4.8** projects
-- Visual Studio 2022 Build Tools or Visual Studio 2022 with the **.NET Framework 4.8** targeting pack
-- Inno Setup 6 (if you want to package the installer)
+- .NET SDK that can build **.NET Framework 4.8** projects
+- Visual Studio 2022 Build Tools or Visual Studio 2022 with the **.NET Framework 4.8 targeting pack**
+- Inno Setup 6 if you want to build the installer
 
-1. Clone or download the repository.
-2. Build the solution with `dotnet build PasteIt.sln -c Release` or from Visual Studio.
-3. If debugging the shell extension layer, manually register `PasteItExtension.dll` for COM interop using the 64-bit `regasm.exe /codebase`.
+**Common commands**
+
+```powershell
+dotnet build .\PasteIt.sln -c Release
+dotnet test .\PasteIt.Core.Tests\PasteIt.Core.Tests.csproj -c Release
+```
+
+## Manual Registration For Development
+
+If you are running from build output instead of the installer, register the shell extension through the app:
+
+```powershell
+.\PasteIt\bin\Release\net48\PasteIt.exe --register-shell-extension ".\PasteItExtension\bin\Release\net48\PasteItExtension.dll"
+```
+
+To unregister it later:
+
+```powershell
+.\PasteIt\bin\Release\net48\PasteIt.exe --unregister-shell-extension ".\PasteItExtension\bin\Release\net48\PasteItExtension.dll"
+```
+
+## Data And Settings
+
+PasteIt stores settings and history under `%AppData%\PasteIt` by default:
+
+- `settings.json`
+- `history.json`
+
+For development or tests, the storage location can be overridden with the `PASTEIT_DATA_DIRECTORY` environment variable.
+
+## Notes
+
+- Video conversion requires `ffmpeg`.
+- The default filename prefix is `clipboard`.
+- If no explicit target directory is available, PasteIt falls back to the Desktop.

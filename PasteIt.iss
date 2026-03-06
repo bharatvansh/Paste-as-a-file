@@ -35,7 +35,7 @@ Name: "{group}\Uninstall PasteIt"; Filename: "{uninstallexe}"
 
 [Run]
 ; Launch once as the installing desktop user so runtime registration happens in the correct HKCU profile.
-Filename: "{app}\PasteIt.exe"; Parameters: "--service"; Flags: nowait postinstall runasoriginaluser runhidden skipifsilent
+Filename: "{app}\PasteIt.exe"; Parameters: "--service"; Flags: nowait runasoriginaluser runhidden skipifsilent
 
 [UninstallRun]
 ; Kill service
