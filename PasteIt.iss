@@ -1,5 +1,3 @@
-#define ShellExtensionBundleVersion "2026.03.06.1"
-
 [Setup]
 AppName=PasteIt
 AppVersion=1.0.0
@@ -15,23 +13,21 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 DirExistsWarning=no
 SetupIconFile=PasteIt.Core\Resources\logo.ico
-CloseApplications=no
 
 [Files]
 ; Main service
-Source: "PasteIt\bin\Release\net48\PasteIt.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "PasteIt\bin\Release\net48\PasteIt.exe.config"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "PasteIt\bin\Release\net48\PasteIt.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+Source: "PasteIt\bin\Release\net48\PasteIt.exe.config"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 ; UI application
-Source: "PasteIt.UI\bin\Release\net48\PasteIt.UI.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "PasteIt.UI\bin\Release\net48\PasteIt.UI.exe.config"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "PasteIt.UI\bin\Release\net48\PasteIt.UI.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+Source: "PasteIt.UI\bin\Release\net48\PasteIt.UI.exe.config"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 ; Shell extension
-Source: "PasteItExtension\bin\Release\net48\PasteItExtension.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstallShellFiles
-Source: "PasteItExtension\bin\Release\net48\SharpShell.dll"; DestDir: "{app}"; Flags: ignoreversion; Check: ShouldInstallShellFiles
+Source: "PasteItExtension\bin\Release\net48\PasteItExtension.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+Source: "PasteItExtension\bin\Release\net48\SharpShell.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
 ; Core library
-Source: "PasteItExtension\bin\Release\net48\PasteIt.Core.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "PasteItExtension\bin\Release\net48\PasteIt.Core.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
 ; Any other DLLs
-Source: "PasteIt\bin\Release\net48\*.dll"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
-Source: "PasteIt.UI\bin\Release\net48\*.dll"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+Source: "PasteIt\bin\Release\net48\*.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist; Excludes: "PasteIt.Core.dll,SharpShell.dll"
 
 [Icons]
 Name: "{group}\PasteIt"; Filename: "{app}\PasteIt.UI.exe"; Comment: "Open PasteIt History & Settings"
@@ -40,7 +36,6 @@ Name: "{group}\Uninstall PasteIt"; Filename: "{uninstallexe}"
 [Registry]
 ; Auto-start the background service on login
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "PasteItService"; ValueData: """{app}\PasteIt.exe"" --service"; Flags: uninsdeletevalue
-Root: HKLM; Subkey: "Software\PasteIt"; ValueType: string; ValueName: "ShellExtensionBundleVersion"; ValueData: "{#ShellExtensionBundleVersion}"; Flags: uninsdeletevalue
 
 [Run]
 ; Start PasteIt automatically after installation
@@ -80,30 +75,12 @@ begin
 end;
 
 procedure DetectShellUpgradeState(InstallDir: String);
-var
-  InstalledShellVersion: String;
-  ExistingShellFilesPresent: Boolean;
 begin
   ShellRegistrationRequired := True;
-  ShellExplorerRestartRequired := False;
-
-  ExistingShellFilesPresent :=
+  ShellExplorerRestartRequired :=
     FileExists(InstallDir + '\PasteItExtension.dll') or
-    FileExists(InstallDir + '\SharpShell.dll');
-
-  if not ExistingShellFilesPresent then
-  begin
-    exit;
-  end;
-
-  if RegQueryStringValue(HKLM, 'Software\PasteIt', 'ShellExtensionBundleVersion', InstalledShellVersion) and
-     (InstalledShellVersion = '{#ShellExtensionBundleVersion}') then
-  begin
-    ShellRegistrationRequired := False;
-    exit;
-  end;
-
-  ShellExplorerRestartRequired := True;
+    FileExists(InstallDir + '\SharpShell.dll') or
+    FileExists(InstallDir + '\PasteIt.Core.dll');
 end;
 
 function IsExplorerRunning(): Boolean;
@@ -166,11 +143,6 @@ begin
   end;
 
   ExplorerRestartPending := not IsExplorerRunning();
-end;
-
-function ShouldInstallShellFiles(): Boolean;
-begin
-  Result := ShellRegistrationRequired;
 end;
 
 function RunPasteIt(Parameters: String): Boolean;
@@ -270,11 +242,8 @@ begin
   {    unregister. Windows allows renaming in-use files, so the new   }
   {    copies can be installed alongside. Explorer will load the new   }
   {    DLLs next time it loads the extension.                         }
-  if ShellRegistrationRequired then
-  begin
-    MoveLockedFile(InstallDir + '\PasteItExtension.dll');
-    MoveLockedFile(InstallDir + '\SharpShell.dll');
-  end;
+  MoveLockedFile(InstallDir + '\PasteItExtension.dll');
+  MoveLockedFile(InstallDir + '\SharpShell.dll');
   MoveLockedFile(InstallDir + '\PasteIt.Core.dll');
   MoveLockedFile(InstallDir + '\PasteIt.exe');
   MoveLockedFile(InstallDir + '\PasteIt.UI.exe');
