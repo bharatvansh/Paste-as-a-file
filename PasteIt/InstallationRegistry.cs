@@ -32,15 +32,25 @@ namespace PasteIt
                         return;
                     }
 
-                    key.SetValue("ExecutablePath", executablePath, RegistryValueKind.String);
-                    key.SetValue("InstallPath", installPath, RegistryValueKind.String);
-                    key.SetValue("LastUpdatedUtc", DateTime.UtcNow.ToString("O"), RegistryValueKind.String);
+                    SetValueIfChanged(key, "ExecutablePath", executablePath);
+                    SetValueIfChanged(key, "InstallPath", installPath);
                 }
             }
             catch
             {
                 // Best-effort registry update; ignore failures.
             }
+        }
+
+        private static void SetValueIfChanged(RegistryKey key, string name, string value)
+        {
+            var existingValue = key.GetValue(name) as string;
+            if (string.Equals(existingValue, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            key.SetValue(name, value, RegistryValueKind.String);
         }
     }
 }

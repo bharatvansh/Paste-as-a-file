@@ -13,6 +13,11 @@ namespace PasteIt.Core
 
         public void AddEntry(HistoryEntry entry)
         {
+            AddEntry(entry, null);
+        }
+
+        public void AddEntry(HistoryEntry entry, int? maxHistoryItems)
+        {
             if (entry == null)
             {
                 return;
@@ -23,8 +28,13 @@ namespace PasteIt.Core
                 var entries = LoadEntriesInternal();
                 entries.Insert(0, entry);
 
-                var settings = new SettingsManager().Load();
-                var max = settings.MaxHistoryItems > 0 ? settings.MaxHistoryItems : 50;
+                var max = maxHistoryItems.GetValueOrDefault();
+                if (max <= 0)
+                {
+                    var settings = new SettingsManager().Load();
+                    max = settings.MaxHistoryItems > 0 ? settings.MaxHistoryItems : 50;
+                }
+
                 if (entries.Count > max)
                 {
                     entries = entries.Take(max).ToList();

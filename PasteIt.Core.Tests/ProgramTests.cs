@@ -8,6 +8,19 @@ namespace PasteIt.Core.Tests
 {
     public class ProgramTests
     {
+        [Theory]
+        [InlineData(new string[0], true)]
+        [InlineData(new[] { "--service" }, true)]
+        [InlineData(new[] { "--SERVICE" }, true)]
+        [InlineData(new[] { "--paste" }, false)]
+        [InlineData(new[] { "--register-shell-extension" }, false)]
+        public void RequiresBackgroundRegistration_ReturnsExpectedValue(string[] args, bool expected)
+        {
+            var result = Program.RequiresBackgroundRegistration(args);
+
+            Assert.Equal(expected, result);
+        }
+
         [Fact]
         public void RunService_ReturnsSuccess_WhenApplicationRunnerCompletes()
         {

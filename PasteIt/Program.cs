@@ -24,9 +24,6 @@ namespace PasteIt
                 return ShellExtensionRegistration.Unregister(ReadArgValue(args, "--unregister-shell-extension"));
             }
 
-            InstallationRegistry.EnsureCurrentExecutableRegistered();
-            StartupRegistration.EnsureEnabled(Application.ExecutablePath);
-
             if (HasArg(args, "--paste"))
             {
                 var targetDirectory = ReadArgValue(args, "--target");
@@ -37,8 +34,9 @@ namespace PasteIt
                 }
             }
 
-            if (args.Length == 0 || HasArg(args, "--service"))
+            if (RequiresBackgroundRegistration(args))
             {
+                EnsureBackgroundRegistration();
                 return RunService();
             }
 
@@ -48,6 +46,11 @@ namespace PasteIt
             }
 
             return 1;
+        }
+
+        internal static bool RequiresBackgroundRegistration(string[] args)
+        {
+            return args.Length == 0 || HasArg(args, "--service");
         }
 
         internal static int RunService(
@@ -91,6 +94,12 @@ namespace PasteIt
             }
 
             return "PasteIt couldn't start: " + ex.Message;
+        }
+
+        private static void EnsureBackgroundRegistration()
+        {
+            InstallationRegistry.EnsureCurrentExecutableRegistered();
+            StartupRegistration.EnsureEnabled(Application.ExecutablePath);
         }
 
         private static bool HasArg(string[] args, string argName) =>

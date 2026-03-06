@@ -6,11 +6,10 @@ namespace PasteIt
     internal sealed class PasteServiceContext : ApplicationContext
     {
         private readonly HotkeyManager _hotkeyManager;
-        private readonly ToastNotification _toast;
+        private ToastNotification? _toast;
 
         public PasteServiceContext()
         {
-            _toast = new ToastNotification();
             _hotkeyManager = new HotkeyManager();
             try
             {
@@ -21,7 +20,7 @@ namespace PasteIt
             {
                 _hotkeyManager.HotkeyPressed -= HandleHotkeyPressed;
                 _hotkeyManager.Dispose();
-                _toast.Dispose();
+                _toast?.Dispose();
                 throw;
             }
         }
@@ -33,16 +32,26 @@ namespace PasteIt
                 return;
             }
 
-            PasteCommand.Execute(null, null, _toast);
+            PasteCommand.Execute(null, null, EnsureToast());
         }
 
         protected override void ExitThreadCore()
         {
             _hotkeyManager.HotkeyPressed -= HandleHotkeyPressed;
             _hotkeyManager.Dispose();
-            _toast.Dispose();
+            _toast?.Dispose();
 
             base.ExitThreadCore();
+        }
+
+        private ToastNotification EnsureToast()
+        {
+            if (_toast == null)
+            {
+                _toast = new ToastNotification();
+            }
+
+            return _toast;
         }
     }
 }

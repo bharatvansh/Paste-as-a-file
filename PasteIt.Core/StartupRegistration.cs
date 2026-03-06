@@ -21,6 +21,15 @@ namespace PasteIt.Core
 
             try
             {
+                using (var existingKey = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: false))
+                {
+                    var existingValue = existingKey?.GetValue(RunValueName) as string;
+                    if (string.Equals(existingValue, valueData, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+                }
+
                 using (var key = Registry.CurrentUser.CreateSubKey(RunKeyPath))
                 {
                     key?.SetValue(RunValueName, valueData, RegistryValueKind.String);
