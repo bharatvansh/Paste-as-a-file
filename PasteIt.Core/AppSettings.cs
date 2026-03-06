@@ -6,5 +6,6 @@ namespace PasteIt.Core
         public string FilenamePrefix { get; set; } = "clipboard";
         public string? DefaultSaveLocation { get; set; }
         public string? FfmpegPath { get; set; }
+        public bool EnableHistory { get; set; } = true;
     }
 }

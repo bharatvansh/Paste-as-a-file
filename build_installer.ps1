@@ -8,10 +8,22 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-$InnoSetupCompiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+$InnoSetupCompiler = $null
+$IsccCommand = Get-Command ISCC.exe -ErrorAction SilentlyContinue
 
-if (-not (Test-Path $InnoSetupCompiler)) {
-    Write-Error "Inno Setup compiler (ISCC.exe) not found at $InnoSetupCompiler. Please install Inno Setup 6."
+if ($IsccCommand) {
+    $InnoSetupCompiler = $IsccCommand.Source
+}
+
+if (-not $InnoSetupCompiler) {
+    $FallbackCompiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+    if (Test-Path $FallbackCompiler) {
+        $InnoSetupCompiler = $FallbackCompiler
+    }
+}
+
+if (-not $InnoSetupCompiler) {
+    Write-Error "Inno Setup compiler (ISCC.exe) was not found on PATH or at C:\Program Files (x86)\Inno Setup 6\ISCC.exe. Please install Inno Setup 6."
     exit 1
 }
 

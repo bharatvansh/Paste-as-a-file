@@ -213,6 +213,7 @@ namespace PasteIt.UI
             TxtFilenamePrefix.Text = s.FilenamePrefix;
             TxtDefaultSaveLocation.Text = s.DefaultSaveLocation ?? string.Empty;
             TxtFfmpegPath.Text = s.FfmpegPath ?? string.Empty;
+            ChkEnableHistory.IsChecked = s.EnableHistory;
         }
 
         private void SaveSettings_Click(object sender, MouseButtonEventArgs e)
@@ -231,6 +232,8 @@ namespace PasteIt.UI
             settings.FfmpegPath = string.IsNullOrWhiteSpace(TxtFfmpegPath.Text)
                 ? null : TxtFfmpegPath.Text.Trim();
 
+            settings.EnableHistory = ChkEnableHistory.IsChecked != false;
+
             _settingsManager.Save(settings);
 
             MessageBox.Show("Settings saved.", "PasteIt", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -248,6 +251,7 @@ namespace PasteIt.UI
                 LoadHistory();
             }
         }
+
     }
 
     // --- ViewModel ---

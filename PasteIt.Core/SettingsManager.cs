@@ -7,7 +7,9 @@ namespace PasteIt.Core
     public sealed class SettingsManager
     {
         private static readonly string DataDirectory =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PasteIt");
+            !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PASTEIT_DATA_DIRECTORY"))
+                ? Environment.GetEnvironmentVariable("PASTEIT_DATA_DIRECTORY")!
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PasteIt");
 
         private static readonly string SettingsFilePath =
             Path.Combine(DataDirectory, "settings.json");

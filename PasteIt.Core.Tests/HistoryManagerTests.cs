@@ -5,6 +5,7 @@ using Xunit;
 
 namespace PasteIt.Core.Tests
 {
+    [Collection("Environment Variables")]
     public class HistoryManagerTests : IDisposable
     {
         private readonly string _appDataRoot;
@@ -36,11 +37,12 @@ namespace PasteIt.Core.Tests
                 FileSizeBytes = 220
             };
 
-            manager.AddEntry(entry);
+            manager.AddEntry(entry, 50);
 
-            var saved = Assert.Single(manager.GetEntries());
-            Assert.Equal(entry.FullText, saved.FullText);
-            Assert.Equal(entry.PreviewText, saved.PreviewText);
+            Assert.True(File.Exists(_historyFilePath));
+            var json = File.ReadAllText(_historyFilePath);
+            Assert.Contains(entry.FullText, json);
+            Assert.Contains(entry.PreviewText, json);
         }
 
         [Fact]

@@ -187,6 +187,19 @@
                             </DockPanel>
                         </Border>
 
+                        <Border Background="{StaticResource CardBgBrush}" CornerRadius="8"
+                                Padding="14,12" Margin="0,0,0,6"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                            <StackPanel>
+                                <CheckBox x:Name="ChkEnableHistory" Content="Save paste history" />
+                                <TextBlock Text="When enabled, pasted text, code, URLs, and HTML are stored locally in PasteIt history."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Margin="26,6,0,0"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Filename prefix -->
                         <Border Background="{StaticResource CardBgBrush}" CornerRadius="8"
                                 Padding="14,12" Margin="0,0,0,6"

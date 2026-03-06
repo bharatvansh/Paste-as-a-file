@@ -7,6 +7,7 @@ using Xunit;
 
 namespace PasteIt.Core.Tests
 {
+    [Collection("Environment Variables")]
     public class PasteCommandTests : IDisposable
     {
         private readonly string _rootDirectory;
@@ -82,6 +83,58 @@ namespace PasteIt.Core.Tests
 
             Assert.Equal(240, result!.Length);
             Assert.StartsWith(new string('x', 200), result);
+        }
+
+        [Fact]
+        public void RecordHistoryIfEnabled_SkipsWritingHistory_WhenDisabled()
+        {
+            var dataDirectory = Path.Combine(_rootDirectory, "data");
+            var originalDataDirectory = Environment.GetEnvironmentVariable("PASTEIT_DATA_DIRECTORY");
+            Environment.SetEnvironmentVariable("PASTEIT_DATA_DIRECTORY", dataDirectory);
+
+            try
+            {
+                var outputFile = Path.Combine(_rootDirectory, "saved.txt");
+                File.WriteAllText(outputFile, "saved");
+
+                using var content = ClipboardContent.Text("top secret");
+                var result = new FileSaveResult(outputFile, "Text (.txt)");
+
+                PasteCommand.RecordHistoryIfEnabled(content, result, new AppSettings { EnableHistory = false });
+
+                Assert.False(File.Exists(Path.Combine(dataDirectory, "history.json")));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("PASTEIT_DATA_DIRECTORY", originalDataDirectory);
+            }
+        }
+
+        [Fact]
+        public void RecordHistoryIfEnabled_WritesHistory_WhenEnabled()
+        {
+            var dataDirectory = Path.Combine(_rootDirectory, "data");
+            var originalDataDirectory = Environment.GetEnvironmentVariable("PASTEIT_DATA_DIRECTORY");
+            Environment.SetEnvironmentVariable("PASTEIT_DATA_DIRECTORY", dataDirectory);
+
+            try
+            {
+                var outputFile = Path.Combine(_rootDirectory, "saved.txt");
+                File.WriteAllText(outputFile, "saved");
+
+                using var content = ClipboardContent.Text("kept");
+                var result = new FileSaveResult(outputFile, "Text (.txt)");
+
+                PasteCommand.RecordHistoryIfEnabled(content, result, new AppSettings { EnableHistory = true });
+
+                var historyPath = Path.Combine(dataDirectory, "history.json");
+                Assert.True(File.Exists(historyPath));
+                Assert.Contains("kept", File.ReadAllText(historyPath));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("PASTEIT_DATA_DIRECTORY", originalDataDirectory);
+            }
         }
 
         private static ClipboardContent CreateClipboardContent(ClipboardContentType type, string text)

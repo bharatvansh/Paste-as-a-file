@@ -33,20 +33,16 @@ Source: "PasteIt\bin\Release\net48\*.dll"; DestDir: "{app}"; Flags: ignoreversio
 Name: "{group}\PasteIt"; Filename: "{app}\PasteIt.UI.exe"; Comment: "Open PasteIt History & Settings"
 Name: "{group}\Uninstall PasteIt"; Filename: "{uninstallexe}"
 
-[Registry]
-; Auto-start the background service on login
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "PasteItService"; ValueData: """{app}\PasteIt.exe"" --service"; Flags: uninsdeletevalue
-
 [Run]
-; Start PasteIt automatically after installation
-Filename: "{app}\PasteIt.exe"; Parameters: "--service"; Flags: nowait runhidden
+; Launch once as the installing desktop user so runtime registration happens in the correct HKCU profile.
+Filename: "{app}\PasteIt.exe"; Parameters: "--service"; Flags: nowait postinstall runasoriginaluser runhidden skipifsilent
 
 [UninstallRun]
 ; Kill service
-Filename: "{cmd}"; Parameters: "/c taskkill /f /im PasteIt.exe"; Flags: runhidden
-Filename: "{cmd}"; Parameters: "/c taskkill /f /im PasteIt.UI.exe"; Flags: runhidden
+Filename: "{cmd}"; Parameters: "/c taskkill /f /im PasteIt.exe"; Flags: runhidden; RunOnceId: "KillPasteItExe"
+Filename: "{cmd}"; Parameters: "/c taskkill /f /im PasteIt.UI.exe"; Flags: runhidden; RunOnceId: "KillPasteItUiExe"
 ; Unregister shell extension
-Filename: "{app}\PasteIt.exe"; Parameters: "--unregister-shell-extension ""{app}\PasteItExtension.dll"""; WorkingDir: "{app}"; Flags: runhidden waituntilterminated
+Filename: "{app}\PasteIt.exe"; Parameters: "--unregister-shell-extension ""{app}\PasteItExtension.dll"""; WorkingDir: "{app}"; Flags: runhidden waituntilterminated; RunOnceId: "UnregisterPasteItShellExtension"
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
@@ -274,7 +270,14 @@ begin
         ShowInstallStatus('Registering shell extension...');
       end;
 
-      RunPasteIt('--register-shell-extension "' + InstallDir + '\PasteItExtension.dll"');
+      if not RunPasteIt('--register-shell-extension "' + InstallDir + '\PasteItExtension.dll"') then
+      begin
+        StartExplorerIfNeeded();
+        RaiseException(
+          'PasteIt setup could not register the Windows Explorer shell extension.' + #13#10#13#10 +
+          'The install is incomplete. Please rerun the installer as Administrator.');
+      end;
+
       StartExplorerIfNeeded();
     end;
   end;

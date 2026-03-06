@@ -11,28 +11,57 @@ namespace PasteIt.Core
 
         public static void EnsureEnabled(string executablePath)
         {
-            if (string.IsNullOrWhiteSpace(executablePath))
-            {
-                return;
-            }
+            ApplyPreference(executablePath, enabled: true);
+        }
 
-            var fullPath = Path.GetFullPath(executablePath);
-            var valueData = $"\"{fullPath}\" --service";
+        public static void Disable()
+        {
+            ApplyPreference(null, enabled: false);
+        }
+
+        public static void ApplyPreference(
+            string? executablePath,
+            bool enabled,
+            RegistryKey? baseKey = null,
+            string? runKeyPath = null,
+            string? runValueName = null)
+        {
+            var keyRoot = baseKey ?? Registry.CurrentUser;
+            var subKeyPath = runKeyPath ?? RunKeyPath;
+            var valueName = runValueName ?? RunValueName;
 
             try
             {
-                using (var existingKey = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: false))
+                if (!enabled)
                 {
-                    var existingValue = existingKey?.GetValue(RunValueName) as string;
+                    using (var key = keyRoot.OpenSubKey(subKeyPath, writable: true))
+                    {
+                        key?.DeleteValue(valueName, throwOnMissingValue: false);
+                    }
+
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(executablePath))
+                {
+                    return;
+                }
+
+                var fullPath = Path.GetFullPath(executablePath);
+                var valueData = $"\"{fullPath}\" --service";
+
+                using (var existingKey = keyRoot.OpenSubKey(subKeyPath, writable: false))
+                {
+                    var existingValue = existingKey?.GetValue(valueName) as string;
                     if (string.Equals(existingValue, valueData, StringComparison.Ordinal))
                     {
                         return;
                     }
                 }
 
-                using (var key = Registry.CurrentUser.CreateSubKey(RunKeyPath))
+                using (var key = keyRoot.CreateSubKey(subKeyPath))
                 {
-                    key?.SetValue(RunValueName, valueData, RegistryValueKind.String);
+                    key?.SetValue(valueName, valueData, RegistryValueKind.String);
                 }
             }
             catch

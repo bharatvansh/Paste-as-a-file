@@ -29,7 +29,7 @@ namespace PasteIt
                     var saver = new FileSaver(() => settings);
                     var saveResult = saver.Save(content, targetDirectory, null, extensionOverride);
 
-                    RecordHistory(content, saveResult, settings);
+                    RecordHistoryIfEnabled(content, saveResult, settings);
 
                     toast?.ShowSuccess(saveResult.DisplayType, saveResult.FilePath);
                     return 0;
@@ -62,6 +62,16 @@ namespace PasteIt
             }
 
             return ExplorerHelper.ResolveTargetDirectory(null);
+        }
+
+        internal static void RecordHistoryIfEnabled(ClipboardContent content, FileSaveResult saveResult, AppSettings settings)
+        {
+            if (!settings.EnableHistory)
+            {
+                return;
+            }
+
+            RecordHistory(content, saveResult, settings);
         }
 
         private static void RecordHistory(ClipboardContent content, FileSaveResult saveResult, AppSettings settings)
