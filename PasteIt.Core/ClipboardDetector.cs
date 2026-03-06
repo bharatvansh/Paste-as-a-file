@@ -62,7 +62,7 @@ namespace PasteIt.Core
                 var html = Clipboard.GetText(TextDataFormat.Html);
                 if (!string.IsNullOrWhiteSpace(html))
                 {
-                    return ClipboardContent.Html(html);
+                    return ClipboardContent.Html(NormalizeHtmlClipboardContent(html));
                 }
             }
 
@@ -90,6 +90,57 @@ namespace PasteIt.Core
             }
 
             return ClipboardContent.Text(text);
+        }
+
+        internal static string NormalizeHtmlClipboardContent(string html)
+        {
+            if (string.IsNullOrWhiteSpace(html))
+            {
+                return string.Empty;
+            }
+
+            var normalized = TryExtractHtmlRange(html) ?? html;
+            return normalized
+                .Replace("<!--StartFragment-->", string.Empty)
+                .Replace("<!--EndFragment-->", string.Empty)
+                .Trim();
+        }
+
+        private static string? TryExtractHtmlRange(string html)
+        {
+            if (!TryReadOffset(html, "StartHTML:", out var start) ||
+                !TryReadOffset(html, "EndHTML:", out var end))
+            {
+                return null;
+            }
+
+            if (start < 0 || end <= start || end > html.Length)
+            {
+                return null;
+            }
+
+            return html.Substring(start, end - start);
+        }
+
+        private static bool TryReadOffset(string html, string marker, out int offset)
+        {
+            offset = 0;
+
+            var start = html.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (start < 0)
+            {
+                return false;
+            }
+
+            start += marker.Length;
+            var end = start;
+
+            while (end < html.Length && char.IsDigit(html[end]))
+            {
+                end++;
+            }
+
+            return end > start && int.TryParse(html.Substring(start, end - start), out offset);
         }
 
         private static bool LooksLikeUrl(string value)

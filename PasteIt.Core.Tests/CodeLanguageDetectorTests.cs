@@ -70,6 +70,19 @@ namespace PasteIt.Core.Tests
         }
 
         [Fact]
+        public void Detect_ReturnsSql_ForSimpleSelectStatement()
+        {
+            var detector = new CodeLanguageDetector();
+            var text = "SELECT * FROM Users;";
+
+            var result = detector.Detect(text);
+
+            Assert.True(result.IsCode);
+            Assert.Equal("SQL", result.Language);
+            Assert.Equal(".sql", result.Extension);
+        }
+
+        [Fact]
         public void Detect_ReturnsPowerShell_ForCmdletPipeline()
         {
             var detector = new CodeLanguageDetector();
@@ -87,6 +100,19 @@ namespace PasteIt.Core.Tests
         {
             var detector = new CodeLanguageDetector();
             var text = "#!/bin/bash\nexport NAME=world\nif [ -n \"$NAME\" ]; then\n  echo \"hello $NAME\"\nfi";
+
+            var result = detector.Detect(text);
+
+            Assert.True(result.IsCode);
+            Assert.Equal("Shell", result.Language);
+            Assert.Equal(".sh", result.Extension);
+        }
+
+        [Fact]
+        public void Detect_ReturnsShell_ForEnvBashShebang()
+        {
+            var detector = new CodeLanguageDetector();
+            var text = "#!/usr/bin/env bash\necho \"hello\"";
 
             var result = detector.Detect(text);
 

@@ -15,5 +15,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
-</Project>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>PasteIt.Core.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

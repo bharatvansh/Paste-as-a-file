@@ -9,6 +9,7 @@ namespace PasteIt
         {
             try
             {
+                var settings = new SettingsManager().Load();
                 var detector = new ClipboardDetector();
                 using (var content = detector.Detect())
                 {
@@ -24,8 +25,8 @@ namespace PasteIt
                         return 3;
                     }
 
-                    var targetDirectory = ExplorerHelper.ResolveTargetDirectory(preferredTargetDirectory);
-                    var saver = new FileSaver();
+                    var targetDirectory = ResolveTargetDirectory(preferredTargetDirectory, () => settings);
+                    var saver = new FileSaver(() => settings);
                     var saveResult = saver.Save(content, targetDirectory, null, extensionOverride);
 
                     RecordHistory(content, saveResult);
@@ -39,6 +40,28 @@ namespace PasteIt
                 toast?.ShowError("Paste failed: " + ex.Message);
                 return 1;
             }
+        }
+
+        internal static string ResolveTargetDirectory(string? preferredTargetDirectory, Func<AppSettings>? loadSettings = null)
+        {
+            if (!string.IsNullOrWhiteSpace(preferredTargetDirectory))
+            {
+                return ExplorerHelper.ResolveTargetDirectory(preferredTargetDirectory);
+            }
+
+            try
+            {
+                var settings = (loadSettings ?? (() => new SettingsManager().Load()))();
+                if (!string.IsNullOrWhiteSpace(settings.DefaultSaveLocation))
+                {
+                    return ExplorerHelper.ResolveTargetDirectory(settings.DefaultSaveLocation);
+                }
+            }
+            catch
+            {
+            }
+
+            return ExplorerHelper.ResolveTargetDirectory(null);
         }
 
         private static void RecordHistory(ClipboardContent content, FileSaveResult saveResult)

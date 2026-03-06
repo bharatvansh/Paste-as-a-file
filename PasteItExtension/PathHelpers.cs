@@ -90,14 +90,14 @@ namespace PasteItExtension
                         continue;
                     }
 
-                    var executablePath = key.GetValue("ExecutablePath") as string;
-                    if (!string.IsNullOrWhiteSpace(executablePath))
+                    if (key.GetValue("ExecutablePath") is string executablePath &&
+                        !string.IsNullOrWhiteSpace(executablePath))
                     {
                         candidates.Add(executablePath);
                     }
 
-                    var installPath = key.GetValue("InstallPath") as string;
-                    if (!string.IsNullOrWhiteSpace(installPath))
+                    if (key.GetValue("InstallPath") is string installPath &&
+                        !string.IsNullOrWhiteSpace(installPath))
                     {
                         candidates.Add(Path.Combine(installPath, "PasteIt.exe"));
                     }
@@ -106,4 +106,3 @@ namespace PasteItExtension
         }
     }
 }
-

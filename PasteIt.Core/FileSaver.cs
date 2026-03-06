@@ -16,6 +16,12 @@ namespace PasteIt.Core
     public sealed class FileSaver
     {
         private static readonly System.Text.Encoding _encoding = new System.Text.UTF8Encoding(false);
+        private readonly Func<AppSettings> _loadSettings;
+
+        public FileSaver(Func<AppSettings>? loadSettings = null)
+        {
+            _loadSettings = loadSettings ?? (() => new SettingsManager().Load());
+        }
 
         public FileSaveResult Save(ClipboardContent content, string? targetDirectory, DateTime? now = null, string? extensionOverride = null)
         {
@@ -35,6 +41,7 @@ namespace PasteIt.Core
             var extension = !string.IsNullOrWhiteSpace(extensionOverride) 
                 ? extensionOverride! 
                 : ResolveExtension(content);
+            extension = NormalizeExtension(extension);
                 
             var path = GenerateUniquePath(directory, extension, now ?? DateTime.Now);
 
@@ -63,14 +70,12 @@ namespace PasteIt.Core
 
         public string GenerateUniquePath(string targetDirectory, string extension, DateTime now)
         {
-            if (!extension.StartsWith("."))
-            {
-                extension = "." + extension;
-            }
+            extension = NormalizeExtension(extension);
+            var prefix = ResolveFilenamePrefix();
 
             for (var counter = 1; counter <= 999; counter++)
             {
-                var filename = $"clipboard_{now:yyyy-MM-dd}_{counter:D3}{extension}";
+                var filename = $"{prefix}_{now:yyyy-MM-dd}_{counter:D3}{extension}";
                 var fullPath = Path.Combine(targetDirectory, filename);
                 if (!File.Exists(fullPath))
                 {
@@ -80,7 +85,7 @@ namespace PasteIt.Core
 
             return Path.Combine(
                 targetDirectory,
-                $"clipboard_{now:yyyy-MM-dd}_{Guid.NewGuid():N}{extension}");
+                $"{prefix}_{now:yyyy-MM-dd}_{Guid.NewGuid():N}{extension}");
         }
 
         private static string ResolveTargetDirectory(string? preferredPath)
@@ -123,6 +128,24 @@ namespace PasteIt.Core
             }
         }
 
+        private string ResolveFilenamePrefix()
+        {
+            try
+            {
+                var prefix = _loadSettings().FilenamePrefix;
+                return string.IsNullOrWhiteSpace(prefix) ? "clipboard" : prefix.Trim();
+            }
+            catch
+            {
+                return "clipboard";
+            }
+        }
+
+        private static string NormalizeExtension(string extension)
+        {
+            return extension.StartsWith(".") ? extension : "." + extension;
+        }
+
         private static string BuildDisplayType(ClipboardContent content, string extension)
         {
             switch (content.Type)
@@ -134,11 +157,11 @@ namespace PasteIt.Core
                 case ClipboardContentType.Url:
                     return "URL (.url)";
                 case ClipboardContentType.Html:
-                    return "HTML (.html)";
+                    return $"HTML ({extension})";
                 case ClipboardContentType.Code:
                     return $"{content.SuggestedLanguage ?? "Code"} ({extension})";
                 case ClipboardContentType.Text:
-                    return "Text (.txt)";
+                    return $"Text ({extension})";
                 default:
                     return $"File ({extension})";
             }
@@ -336,4 +359,3 @@ namespace PasteIt.Core
         }
     }
 }
-

@@ -89,6 +89,7 @@ namespace PasteIt.Core
             new LanguageRule("SQL", ".sql", 6, new[]
             {
                 new PatternScore(@"\bSELECT\b", 3),
+                new PatternScore(@"\bFROM\b", 2),
                 new PatternScore(@"\bINSERT\s+INTO\b", 4),
                 new PatternScore(@"\bCREATE\s+TABLE\b", 4),
                 new PatternScore(@"\bWHERE\b", 2),
@@ -142,7 +143,7 @@ namespace PasteIt.Core
             }),
             new LanguageRule("Shell", ".sh", 6, new[]
             {
-                new PatternScore(@"^#!\s*/bin/(ba)?sh", 5, RegexOptions.Multiline),
+                new PatternScore(@"^#!\s*(/bin/(ba)?sh|/usr/bin/env\s+(ba)?sh)\b", 5, RegexOptions.Multiline),
                 new PatternScore(@"\becho\s+['""]?.+", 2),
                 new PatternScore(@"\$\([^)]+\)", 2),
                 new PatternScore(@"\bif\s+\[.+\]\s*;\s*then", 3),
