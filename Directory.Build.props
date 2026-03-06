@@ -3,6 +3,13 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+    <Authors>PasteIt Contributors</Authors>
+    <Company>PasteIt Open Source</Company>
+    <Product>PasteIt</Product>
+    <Description>Save clipboard content directly as a file from Windows Explorer.</Description>
+    <Copyright>Copyright © 2026 PasteIt Contributors</Copyright>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 </Project>
 

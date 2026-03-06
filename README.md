@@ -93,3 +93,12 @@ For development or tests, the storage location can be overridden with the `PASTE
 - Video conversion requires `ffmpeg`.
 - The default filename prefix is `clipboard`.
 - If no explicit target directory is available, PasteIt falls back to the Desktop.
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started, report bugs, or suggest features.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+

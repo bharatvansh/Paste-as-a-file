@@ -1,11 +1,30 @@
+# Build output
 bin/
 obj/
+publish/
+Output/
+
+# IDE / Editor
 .vs/
-TestResults/
+.vscode/
+.idea/
 *.user
 *.suo
 *.cache
-*.pdb
 *.opendb
 
-Output/
+# NuGet
+packages/
+*.nupkg
+
+# Debug
+*.pdb
+
+# Test results
+TestResults/
+coverage/
+
+# OS files
+Thumbs.db
+desktop.ini
+.DS_Store
