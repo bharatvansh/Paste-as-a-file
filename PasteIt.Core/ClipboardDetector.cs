@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 
 namespace PasteIt.Core
@@ -31,6 +32,15 @@ namespace PasteIt.Core
                 if (image != null)
                 {
                     return ClipboardContent.Image((Image)image.Clone());
+                }
+            }
+
+            if (Clipboard.ContainsAudio())
+            {
+                var audioStream = Clipboard.GetAudioStream();
+                if (audioStream != null)
+                {
+                    return ClipboardContent.Audio(audioStream);
                 }
             }
 

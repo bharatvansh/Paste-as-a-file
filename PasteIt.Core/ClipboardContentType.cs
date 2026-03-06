@@ -8,7 +8,8 @@ namespace PasteIt.Core
         Url = 3,
         Html = 4,
         Code = 5,
-        Text = 6
+        Text = 6,
+        Audio = 7
     }
 }
 

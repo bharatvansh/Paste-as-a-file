@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.IO;
 
 namespace PasteIt.Core
 {
@@ -10,13 +11,15 @@ namespace PasteIt.Core
             string? textContent,
             string? suggestedLanguage,
             string? suggestedExtension,
-            Image? imageContent)
+            Image? imageContent,
+            Stream? audioContent)
         {
             Type = type;
             TextContent = textContent;
             SuggestedLanguage = suggestedLanguage;
             SuggestedExtension = suggestedExtension;
             ImageContent = imageContent;
+            AudioContent = audioContent;
         }
 
         public ClipboardContentType Type { get; }
@@ -29,39 +32,46 @@ namespace PasteIt.Core
 
         public Image? ImageContent { get; }
 
+        public Stream? AudioContent { get; }
+
         public bool HasContent =>
             Type switch
             {
                 ClipboardContentType.Image => ImageContent != null,
+                ClipboardContentType.Audio => AudioContent != null,
                 ClipboardContentType.None => false,
                 ClipboardContentType.FileDropList => false,
                 _ => !string.IsNullOrWhiteSpace(TextContent)
             };
 
         public static ClipboardContent None() =>
-            new ClipboardContent(ClipboardContentType.None, null, null, null, null);
+            new ClipboardContent(ClipboardContentType.None, null, null, null, null, null);
 
         public static ClipboardContent FileDropList() =>
-            new ClipboardContent(ClipboardContentType.FileDropList, null, null, null, null);
+            new ClipboardContent(ClipboardContentType.FileDropList, null, null, null, null, null);
 
         public static ClipboardContent Image(Image image) =>
-            new ClipboardContent(ClipboardContentType.Image, null, null, ".png", image);
+            new ClipboardContent(ClipboardContentType.Image, null, null, ".png", image, null);
+
+        public static ClipboardContent Audio(Stream audioStream) =>
+            new ClipboardContent(ClipboardContentType.Audio, null, null, ".wav", null, audioStream);
 
         public static ClipboardContent Url(string url) =>
-            new ClipboardContent(ClipboardContentType.Url, url, "URL", ".url", null);
+            new ClipboardContent(ClipboardContentType.Url, url, "URL", ".url", null, null);
 
         public static ClipboardContent Html(string html) =>
-            new ClipboardContent(ClipboardContentType.Html, html, "HTML", ".html", null);
+            new ClipboardContent(ClipboardContentType.Html, html, "HTML", ".html", null, null);
 
         public static ClipboardContent Code(string code, string language, string extension) =>
-            new ClipboardContent(ClipboardContentType.Code, code, language, extension, null);
+            new ClipboardContent(ClipboardContentType.Code, code, language, extension, null, null);
 
         public static ClipboardContent Text(string text) =>
-            new ClipboardContent(ClipboardContentType.Text, text, "Text", ".txt", null);
+            new ClipboardContent(ClipboardContentType.Text, text, "Text", ".txt", null, null);
 
         public void Dispose()
         {
             ImageContent?.Dispose();
+            AudioContent?.Dispose();
         }
     }
 }

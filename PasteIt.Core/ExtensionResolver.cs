@@ -21,8 +21,18 @@ namespace PasteIt.Core
                 case ClipboardContentType.Url:
                     return new[] { new FileExtensionOption("URL", ".url", true) };
 
+                case ClipboardContentType.Audio:
+                    return new[]
+                    {
+                        new FileExtensionOption("WAV", ".wav", true),
+                        new FileExtensionOption("MP3", ".mp3", false),
+                        new FileExtensionOption("FLAC", ".flac", false),
+                        new FileExtensionOption("OGG", ".ogg", false),
+                        new FileExtensionOption("AAC", ".aac", false)
+                    };
+
                 case ClipboardContentType.Image:
-                    return new[] { new FileExtensionOption("Image", ".png", true) };
+                    return ResolveForImage();
 
                 default:
                     return new[] { new FileExtensionOption("File", ".txt", true) };
@@ -66,6 +76,20 @@ namespace PasteIt.Core
             }
 
             return options;
+        }
+
+        private static IReadOnlyList<FileExtensionOption> ResolveForImage()
+        {
+            return new[]
+            {
+                new FileExtensionOption("PNG", ".png", true),
+                new FileExtensionOption("JPG", ".jpg", false),
+                new FileExtensionOption("WebP", ".webp", false),
+                new FileExtensionOption("Bitmap", ".bmp", false),
+                new FileExtensionOption("GIF", ".gif", false),
+                new FileExtensionOption("TIFF", ".tiff", false),
+                new FileExtensionOption("Icon", ".ico", false),
+            };
         }
 
         private static IReadOnlyList<FileExtensionOption> ResolveForHtml()
