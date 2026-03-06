@@ -30,6 +30,16 @@ namespace PasteIt.UI
             }
         }
 
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+
+            if (HistoryView.Visibility == Visibility.Visible)
+            {
+                LoadHistory();
+            }
+        }
+
         // --- Navigation ---
 
         private void BtnHistory_Click(object sender, RoutedEventArgs e)
@@ -62,6 +72,11 @@ namespace PasteIt.UI
         {
             if (sender is FrameworkElement el && el.DataContext is HistoryItemViewModel vm)
             {
+                if (!EnsureEntryExists(vm))
+                {
+                    return;
+                }
+
                 vm.TogglePreview();
             }
         }
@@ -72,6 +87,11 @@ namespace PasteIt.UI
 
             if (sender is FrameworkElement el && el.DataContext is HistoryItemViewModel vm)
             {
+                if (!EnsureEntryExists(vm))
+                {
+                    return;
+                }
+
                 TryRunHistoryAction(() =>
                 {
                     ClipboardAccessor.Execute<object?>(() =>
@@ -106,13 +126,13 @@ namespace PasteIt.UI
 
             if (sender is FrameworkElement el && el.DataContext is HistoryItemViewModel vm)
             {
+                if (!EnsureEntryExists(vm))
+                {
+                    return;
+                }
+
                 TryRunHistoryAction(() =>
                 {
-                    if (!File.Exists(vm.Entry.FilePath))
-                    {
-                        throw new FileNotFoundException("The saved file no longer exists.", vm.Entry.FilePath);
-                    }
-
                     var directoryPath = Path.GetDirectoryName(vm.Entry.FilePath);
                     if (string.IsNullOrWhiteSpace(directoryPath) || !Directory.Exists(directoryPath))
                     {
@@ -133,17 +153,6 @@ namespace PasteIt.UI
             e.Handled = true;
 
             if (!(sender is FrameworkElement el && el.DataContext is HistoryItemViewModel vm))
-            {
-                return;
-            }
-
-            var result = MessageBox.Show(
-                "Remove this entry from history? The saved file will stay on disk.",
-                "PasteIt",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (result != MessageBoxResult.Yes)
             {
                 return;
             }
@@ -176,6 +185,23 @@ namespace PasteIt.UI
             {
                 MessageBox.Show(ex.Message, "PasteIt", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
+        }
+
+        private bool EnsureEntryExists(HistoryItemViewModel vm)
+        {
+            if (vm == null)
+            {
+                return false;
+            }
+
+            if (File.Exists(vm.Entry.FilePath))
+            {
+                return true;
+            }
+
+            _historyManager.DeleteEntry(vm.Entry);
+            LoadHistory();
+            return false;
         }
 
         // --- Settings ---

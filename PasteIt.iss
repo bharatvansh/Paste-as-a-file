@@ -43,8 +43,8 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 Root: HKLM; Subkey: "Software\PasteIt"; ValueType: string; ValueName: "ShellExtensionBundleVersion"; ValueData: "{#ShellExtensionBundleVersion}"; Flags: uninsdeletevalue
 
 [Run]
-; Start the background service
-Filename: "{app}\PasteIt.exe"; Parameters: "--service"; Description: "Launch PasteIt background service"; Flags: nowait postinstall skipifsilent
+; Start PasteIt automatically after installation
+Filename: "{app}\PasteIt.exe"; Parameters: "--service"; Flags: nowait runhidden
 
 [UninstallRun]
 ; Kill service
