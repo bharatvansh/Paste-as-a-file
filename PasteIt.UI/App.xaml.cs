@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Windows;
+using PasteIt.Core;
 
 namespace PasteIt.UI
 {
@@ -15,6 +17,12 @@ namespace PasteIt.UI
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+            var uiExecutablePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var installDirectory = Path.GetDirectoryName(uiExecutablePath);
+            if (!string.IsNullOrWhiteSpace(installDirectory))
+            {
+                StartupRegistration.EnsureEnabled(Path.Combine(installDirectory, "PasteIt.exe"));
+            }
 
             var args = e.Args;
             for (var i = 0; i < args.Length; i++)

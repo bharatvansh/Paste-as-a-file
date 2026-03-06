@@ -95,19 +95,26 @@ namespace PasteIt.Core
 
         private ClipboardContent DetectFromText(string? rawText)
         {
+            return ClassifyTextContent(rawText, _languageDetector);
+        }
+
+        internal static ClipboardContent ClassifyTextContent(string? rawText, CodeLanguageDetector? languageDetector = null)
+        {
             if (string.IsNullOrWhiteSpace(rawText))
             {
                 return ClipboardContent.None();
             }
 
-            var text = rawText!.Trim();
+            var text = rawText!;
+            var trimmedText = text.Trim();
 
-            if (LooksLikeUrl(text))
+            if (LooksLikeUrl(trimmedText))
             {
-                return ClipboardContent.Url(text);
+                return ClipboardContent.Url(trimmedText);
             }
 
-            var code = _languageDetector.Detect(text);
+            var detector = languageDetector ?? new CodeLanguageDetector();
+            var code = detector.Detect(text);
             if (code.IsCode)
             {
                 return ClipboardContent.Code(text, code.Language, code.Extension);

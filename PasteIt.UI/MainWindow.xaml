@@ -41,6 +41,7 @@
             <Grid x:Name="HistoryView" Visibility="Visible">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
@@ -49,14 +50,32 @@
                            Foreground="{StaticResource TextPrimaryBrush}"
                            Margin="0,0,0,14" />
 
-                <TextBlock x:Name="EmptyHistoryLabel" Grid.Row="1"
+                <Border Grid.Row="1"
+                        Background="{StaticResource CardBgBrush}"
+                        CornerRadius="8"
+                        Padding="12,10"
+                        Margin="0,0,0,12"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1">
+                    <TextBox x:Name="TxtHistorySearch"
+                             TextChanged="SearchHistory_TextChanged"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             FontSize="12.5"
+                             Foreground="{StaticResource TextPrimaryBrush}"
+                             ToolTip="Search history"
+                             Text=""
+                             />
+                </Border>
+
+                <TextBlock x:Name="EmptyHistoryLabel" Grid.Row="2"
                            Text="Nothing here yet. Paste something with Ctrl+Shift+V or the right-click menu."
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="13" TextWrapping="Wrap"
                            VerticalAlignment="Center" HorizontalAlignment="Center"
                            Visibility="Collapsed" />
 
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
                               Padding="0,0,4,0">
                     <ItemsControl x:Name="HistoryList">
                         <ItemsControl.ItemTemplate>
@@ -108,15 +127,39 @@
                                             <Run Text="{Binding FileSize, Mode=OneWay}" />
                                         </TextBlock>
 
-                                        <!-- Copy -->
-                                        <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="2"
-                                                VerticalAlignment="Center" Cursor="Hand"
-                                                MouseLeftButtonUp="CopyButton_Click"
-                                                Background="Transparent"
-                                                Padding="6,4">
-                                            <TextBlock Text="Copy" FontSize="12"
-                                                       Foreground="{StaticResource AccentBrush}" />
-                                        </Border>
+                                        <!-- Actions -->
+                                        <StackPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2"
+                                                    Orientation="Horizontal"
+                                                    VerticalAlignment="Center">
+                                            <Border VerticalAlignment="Center" Cursor="Hand"
+                                                    MouseLeftButtonUp="CopyButton_Click"
+                                                    Background="Transparent"
+                                                    Padding="6,4">
+                                                <TextBlock Text="Copy" FontSize="12"
+                                                           Foreground="{StaticResource AccentBrush}" />
+                                            </Border>
+                                            <Border VerticalAlignment="Center" Cursor="Hand"
+                                                    MouseLeftButtonUp="OpenButton_Click"
+                                                    Background="Transparent"
+                                                    Padding="6,4">
+                                                <TextBlock Text="Open" FontSize="12"
+                                                           Foreground="{StaticResource AccentBrush}" />
+                                            </Border>
+                                            <Border VerticalAlignment="Center" Cursor="Hand"
+                                                    MouseLeftButtonUp="RevealButton_Click"
+                                                    Background="Transparent"
+                                                    Padding="6,4">
+                                                <TextBlock Text="Reveal" FontSize="12"
+                                                           Foreground="{StaticResource AccentBrush}" />
+                                            </Border>
+                                            <Border VerticalAlignment="Center" Cursor="Hand"
+                                                    MouseLeftButtonUp="DeleteButton_Click"
+                                                    Background="Transparent"
+                                                    Padding="6,4">
+                                                <TextBlock Text="Delete" FontSize="12"
+                                                           Foreground="{StaticResource DangerBrush}" />
+                                            </Border>
+                                        </StackPanel>
 
                                         <!-- Preview -->
                                         <Border Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="2"
@@ -214,22 +257,6 @@
                                 </StackPanel>
                                 <TextBox x:Name="TxtFfmpegPath" DockPanel.Dock="Right"
                                          Width="170" VerticalAlignment="Center" HorizontalAlignment="Right" />
-                            </DockPanel>
-                        </Border>
-
-                        <!-- Auto-start -->
-                        <Border Background="{StaticResource CardBgBrush}" CornerRadius="8"
-                                Padding="14,12" Margin="0,0,0,6"
-                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-                            <DockPanel>
-                                <StackPanel DockPanel.Dock="Left">
-                                    <TextBlock Text="Start with Windows" FontSize="13" FontWeight="Medium"
-                                               Foreground="{StaticResource TextPrimaryBrush}" />
-                                    <TextBlock Text="Run the service on login" FontSize="11.5"
-                                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" />
-                                </StackPanel>
-                                <CheckBox x:Name="ChkAutoStart" DockPanel.Dock="Right"
-                                          VerticalAlignment="Center" HorizontalAlignment="Right" />
                             </DockPanel>
                         </Border>
 

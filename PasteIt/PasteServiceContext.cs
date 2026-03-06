@@ -12,8 +12,18 @@ namespace PasteIt
         {
             _toast = new ToastNotification();
             _hotkeyManager = new HotkeyManager();
-            _hotkeyManager.HotkeyPressed += HandleHotkeyPressed;
-            _hotkeyManager.Register(Keys.V, KeyModifiers.Control | KeyModifiers.Shift);
+            try
+            {
+                _hotkeyManager.HotkeyPressed += HandleHotkeyPressed;
+                _hotkeyManager.Register(Keys.V, KeyModifiers.Control | KeyModifiers.Shift);
+            }
+            catch
+            {
+                _hotkeyManager.HotkeyPressed -= HandleHotkeyPressed;
+                _hotkeyManager.Dispose();
+                _toast.Dispose();
+                throw;
+            }
         }
 
         private void HandleHotkeyPressed(object? sender, System.EventArgs e)
@@ -36,4 +46,3 @@ namespace PasteIt
         }
     }
 }
-

@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using PasteIt.Core;
@@ -13,6 +15,7 @@ namespace PasteIt.UI
     {
         private readonly HistoryManager _historyManager = new HistoryManager();
         private readonly SettingsManager _settingsManager = new SettingsManager();
+        private List<HistoryItemViewModel> _historyItems = new List<HistoryItemViewModel>();
 
         public MainWindow()
         {
@@ -51,16 +54,8 @@ namespace PasteIt.UI
         private void LoadHistory()
         {
             var entries = _historyManager.GetEntries();
-
-            if (entries.Count == 0)
-            {
-                EmptyHistoryLabel.Visibility = Visibility.Visible;
-                HistoryList.ItemsSource = null;
-                return;
-            }
-
-            EmptyHistoryLabel.Visibility = Visibility.Collapsed;
-            HistoryList.ItemsSource = entries.Select(e => new HistoryItemViewModel(e)).ToList();
+            _historyItems = entries.Select(e => new HistoryItemViewModel(e)).ToList();
+            RefreshHistoryView();
         }
 
         private void HistoryCard_Click(object sender, MouseButtonEventArgs e)
@@ -77,11 +72,11 @@ namespace PasteIt.UI
 
             if (sender is FrameworkElement el && el.DataContext is HistoryItemViewModel vm)
             {
-                try
+                TryRunHistoryAction(() =>
                 {
-                    if (!string.IsNullOrEmpty(vm.Entry.PreviewText))
+                    if (!string.IsNullOrEmpty(vm.CopyText))
                     {
-                        Clipboard.SetText(vm.Entry.PreviewText);
+                        Clipboard.SetText(vm.CopyText);
                     }
                     else if (File.Exists(vm.Entry.FilePath))
                     {
@@ -93,8 +88,120 @@ namespace PasteIt.UI
                     {
                         Clipboard.SetText(vm.Entry.FilePath);
                     }
-                }
-                catch { }
+                });
+            }
+        }
+
+        private void OpenButton_Click(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+
+            if (sender is FrameworkElement el && el.DataContext is HistoryItemViewModel vm)
+            {
+                TryRunHistoryAction(() =>
+                {
+                    if (!File.Exists(vm.Entry.FilePath))
+                    {
+                        throw new FileNotFoundException("The saved file no longer exists.", vm.Entry.FilePath);
+                    }
+
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = vm.Entry.FilePath,
+                        UseShellExecute = true
+                    });
+                });
+            }
+        }
+
+        private void RevealButton_Click(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+
+            if (sender is FrameworkElement el && el.DataContext is HistoryItemViewModel vm)
+            {
+                TryRunHistoryAction(() =>
+                {
+                    if (!File.Exists(vm.Entry.FilePath))
+                    {
+                        throw new FileNotFoundException("The saved file no longer exists.", vm.Entry.FilePath);
+                    }
+
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = "/select,\"" + vm.Entry.FilePath + "\"",
+                        UseShellExecute = true
+                    });
+                });
+            }
+        }
+
+        private void DeleteButton_Click(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+
+            if (!(sender is FrameworkElement el && el.DataContext is HistoryItemViewModel vm))
+            {
+                return;
+            }
+
+            var result = MessageBox.Show(
+                "Remove this entry from history? The saved file will stay on disk.",
+                "PasteIt",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            _historyManager.DeleteEntry(vm.Entry);
+            LoadHistory();
+        }
+
+        private void SearchHistory_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            RefreshHistoryView();
+        }
+
+        private void RefreshHistoryView()
+        {
+            var query = TxtHistorySearch?.Text;
+            var filteredItems = _historyItems.Where(vm => vm.Matches(query)).ToList();
+
+            HistoryList.ItemsSource = filteredItems;
+
+            var hasAnyHistory = _historyItems.Count > 0;
+            var hasMatches = filteredItems.Count > 0;
+
+            if (!hasAnyHistory)
+            {
+                EmptyHistoryLabel.Text = "Nothing here yet. Paste something with Ctrl+Shift+V or the right-click menu.";
+                EmptyHistoryLabel.Visibility = Visibility.Visible;
+                return;
+            }
+
+            if (!hasMatches)
+            {
+                EmptyHistoryLabel.Text = "No history entries match your search.";
+                EmptyHistoryLabel.Visibility = Visibility.Visible;
+                return;
+            }
+
+            EmptyHistoryLabel.Visibility = Visibility.Collapsed;
+        }
+
+        private static void TryRunHistoryAction(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "PasteIt", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -107,7 +214,6 @@ namespace PasteIt.UI
             TxtFilenamePrefix.Text = s.FilenamePrefix;
             TxtDefaultSaveLocation.Text = s.DefaultSaveLocation ?? string.Empty;
             TxtFfmpegPath.Text = s.FfmpegPath ?? string.Empty;
-            ChkAutoStart.IsChecked = s.AutoStartOnBoot;
         }
 
         private void SaveSettings_Click(object sender, MouseButtonEventArgs e)
@@ -125,8 +231,6 @@ namespace PasteIt.UI
 
             settings.FfmpegPath = string.IsNullOrWhiteSpace(TxtFfmpegPath.Text)
                 ? null : TxtFfmpegPath.Text.Trim();
-
-            settings.AutoStartOnBoot = ChkAutoStart.IsChecked == true;
 
             _settingsManager.Save(settings);
 
@@ -157,6 +261,10 @@ namespace PasteIt.UI
         public HistoryItemViewModel(HistoryEntry entry) => Entry = entry;
 
         public string FileName => Path.GetFileName(Entry.FilePath);
+
+        public string? CopyText => !string.IsNullOrEmpty(Entry.FullText)
+            ? Entry.FullText
+            : Entry.PreviewText;
 
         public string TypeLabel
         {
@@ -221,6 +329,11 @@ namespace PasteIt.UI
                         return "(No preview available)";
                 }
             }
+        }
+
+        public bool Matches(string? query)
+        {
+            return HistorySearch.Matches(Entry, query);
         }
 
         public Visibility PreviewVisibility => _showPreview ? Visibility.Visible : Visibility.Collapsed;

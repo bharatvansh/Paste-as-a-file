@@ -8,12 +8,6 @@ namespace PasteIt.Core
 {
     public sealed class HistoryManager
     {
-        private static readonly string DataDirectory =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PasteIt");
-
-        private static readonly string HistoryFilePath =
-            Path.Combine(DataDirectory, "history.json");
-
         private readonly JavaScriptSerializer _serializer = new JavaScriptSerializer();
         private readonly object _lock = new object();
 
@@ -45,6 +39,27 @@ namespace PasteIt.Core
             lock (_lock)
             {
                 return LoadEntriesInternal();
+            }
+        }
+
+        public void DeleteEntry(HistoryEntry entry)
+        {
+            if (entry == null)
+            {
+                return;
+            }
+
+            lock (_lock)
+            {
+                var entries = LoadEntriesInternal();
+                var index = entries.FindIndex(candidate => AreSameEntry(candidate, entry));
+                if (index < 0)
+                {
+                    return;
+                }
+
+                entries.RemoveAt(index);
+                SaveEntries(entries);
             }
         }
 
@@ -92,5 +107,24 @@ namespace PasteIt.Core
                 // Best-effort write; ignore failures.
             }
         }
+
+        private static bool AreSameEntry(HistoryEntry left, HistoryEntry right)
+        {
+            return left.TimestampUtc == right.TimestampUtc &&
+                   string.Equals(left.FilePath, right.FilePath, StringComparison.OrdinalIgnoreCase) &&
+                   string.Equals(left.ContentType, right.ContentType, StringComparison.Ordinal) &&
+                   string.Equals(left.DisplayType, right.DisplayType, StringComparison.Ordinal) &&
+                   string.Equals(left.FullText, right.FullText, StringComparison.Ordinal) &&
+                   string.Equals(left.PreviewText, right.PreviewText, StringComparison.Ordinal) &&
+                   left.FileSizeBytes == right.FileSizeBytes;
+        }
+
+        private static string DataDirectory =>
+            !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("PASTEIT_DATA_DIRECTORY"))
+                ? Environment.GetEnvironmentVariable("PASTEIT_DATA_DIRECTORY")!
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PasteIt");
+
+        private static string HistoryFilePath =>
+            Path.Combine(DataDirectory, "history.json");
     }
 }

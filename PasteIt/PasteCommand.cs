@@ -68,11 +68,8 @@ namespace PasteIt
         {
             try
             {
-                var preview = content.Type == ClipboardContentType.Image ||
-                              content.Type == ClipboardContentType.Audio ||
-                              content.Type == ClipboardContentType.Video
-                    ? null
-                    : Truncate(content.TextContent, 200);
+                var fullText = GetHistoryFullText(content);
+                var preview = Truncate(fullText, 200);
 
                 var fileSize = 0L;
                 try
@@ -92,6 +89,7 @@ namespace PasteIt
                     FilePath = saveResult.FilePath,
                     ContentType = content.Type.ToString(),
                     DisplayType = saveResult.DisplayType,
+                    FullText = fullText,
                     PreviewText = preview,
                     FileSizeBytes = fileSize
                 };
@@ -101,6 +99,20 @@ namespace PasteIt
             catch
             {
                 // Best-effort history recording; never break the paste flow.
+            }
+        }
+
+        internal static string? GetHistoryFullText(ClipboardContent content)
+        {
+            switch (content.Type)
+            {
+                case ClipboardContentType.Url:
+                case ClipboardContentType.Html:
+                case ClipboardContentType.Code:
+                case ClipboardContentType.Text:
+                    return content.TextContent;
+                default:
+                    return null;
             }
         }
 

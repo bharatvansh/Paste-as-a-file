@@ -102,5 +102,29 @@ namespace PasteIt.Core.Tests
                 }
             }
         }
+
+        [Fact]
+        public void ClassifyTextContent_PreservesWhitespace_ForPlainText()
+        {
+            const string rawText = "  keep surrounding whitespace  \r\n";
+
+            using (var content = ClipboardDetector.ClassifyTextContent(rawText))
+            {
+                Assert.Equal(ClipboardContentType.Text, content.Type);
+                Assert.Equal(rawText, content.TextContent);
+            }
+        }
+
+        [Fact]
+        public void ClassifyTextContent_PreservesWhitespace_ForCode()
+        {
+            const string rawText = "using System;\r\n\r\npublic class Sample { }\r\n";
+
+            using (var content = ClipboardDetector.ClassifyTextContent(rawText))
+            {
+                Assert.Equal(ClipboardContentType.Code, content.Type);
+                Assert.Equal(rawText, content.TextContent);
+            }
+        }
     }
 }

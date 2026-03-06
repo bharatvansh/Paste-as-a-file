@@ -1,6 +1,8 @@
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows.Forms;
+using PasteIt.Core;
 
 namespace PasteIt
 {
@@ -12,6 +14,7 @@ namespace PasteIt
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             InstallationRegistry.EnsureCurrentExecutableRegistered();
+            StartupRegistration.EnsureEnabled(Application.ExecutablePath);
 
             if (HasArg(args, "--paste"))
             {
@@ -25,8 +28,7 @@ namespace PasteIt
 
             if (args.Length == 0 || HasArg(args, "--service"))
             {
-                Application.Run(new PasteServiceContext());
-                return 0;
+                return RunService();
             }
 
             using (var toast = new ToastNotification())
@@ -35,6 +37,49 @@ namespace PasteIt
             }
 
             return 1;
+        }
+
+        internal static int RunService(
+            Func<ApplicationContext>? contextFactory = null,
+            Action<string>? reportError = null,
+            Action<ApplicationContext>? runApplication = null)
+        {
+            var createContext = contextFactory ?? (() => new PasteServiceContext());
+            var applicationRunner = runApplication ?? (context => Application.Run(context));
+
+            try
+            {
+                applicationRunner(createContext());
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                var message = BuildStartupErrorMessage(ex);
+                if (reportError != null)
+                {
+                    reportError(message);
+                }
+                else
+                {
+                    using (var toast = new ToastNotification())
+                    {
+                        toast.ShowError(message);
+                    }
+                }
+
+                return 1;
+            }
+        }
+
+        internal static string BuildStartupErrorMessage(Exception ex)
+        {
+            if (ex is Win32Exception &&
+                ex.Message.IndexOf("global hotkey", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return "PasteIt couldn't start because Ctrl+Shift+V is already in use by another app or PasteIt instance.";
+            }
+
+            return "PasteIt couldn't start: " + ex.Message;
         }
 
         private static bool HasArg(string[] args, string argName) =>
