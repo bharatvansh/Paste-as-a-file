@@ -13,6 +13,17 @@ namespace PasteIt
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            if (HasArg(args, "--register-shell-extension"))
+            {
+                return ShellExtensionRegistration.Register(ReadArgValue(args, "--register-shell-extension"));
+            }
+
+            if (HasArg(args, "--unregister-shell-extension"))
+            {
+                return ShellExtensionRegistration.Unregister(ReadArgValue(args, "--unregister-shell-extension"));
+            }
+
             InstallationRegistry.EnsureCurrentExecutableRegistered();
             StartupRegistration.EnsureEnabled(Application.ExecutablePath);
 
@@ -33,7 +44,7 @@ namespace PasteIt
 
             using (var toast = new ToastNotification())
             {
-                toast.ShowError("Unsupported arguments. Use --service or --paste.");
+                toast.ShowError("Unsupported arguments. Use --service, --paste, --register-shell-extension, or --unregister-shell-extension.");
             }
 
             return 1;

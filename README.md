@@ -5,14 +5,14 @@
 PasteIt intelligently detects the clipboard content type:
 - **Plain Text**: Saved as `.txt` files.
 - **Code snippets**: The custom-built language detector identifies nearly 20 languages (Python, JavaScript, TypeScript, C#, Java, C++, C, HTML, CSS, XML, SQL, Go, Rust, Kotlin, Swift, PHP, Ruby, Shell scripts, PowerShell, and JSON) and automatically applies the correct file extension (e.g., `.js`, `.py`, `.sql`).
-- **Images**: Saved automatically as `.png` files.
+- **Images**: Offers `.png` by default, plus `.jpg`, `.webp`, `.bmp`, `.gif`, `.tiff`, and `.ico`.
 - **Video files**: Detects a single copied video file from the clipboard and saves it in its original format. When `ffmpeg` is available on `PATH` or configured in Settings, it can also convert between common formats like `.mp4`, `.mov`, `.avi`, `.mkv`, `.webm`, `.wmv`, `.m4v`, and `.mpeg`.
 - **URLs / Links**: Saved as `.url` Windows Internet shortcuts.
 - **HTML data**: Saved as `.html` pages.
 
 ## Features
 
-- **Context Menu Integration**: Right-click in any folder or on any folder background in Windows Explorer to find the "Paste as File" and dynamic "Paste as [Detected Type]" option.
+- **Context Menu Integration**: Right-click in any folder or on any folder background in Windows Explorer to find the "Paste as File" menu and its dynamic format options for the detected clipboard content.
 - **Smart Content Detection**: Parses the Windows Clipboard prioritizing the exact content the user actually intended (differentiating plain text from rich text, handling code, finding images, etc).
 - **History Tracking**: Automatically keeps a searchable local history of your pasted items, providing previews for text/code and recording saved file locations.
 - **Silent Operation**: Operates quickly through a background CLI executable that parses the request, dumps the file, raises a sleek Windows Toast Notification, and exits. 

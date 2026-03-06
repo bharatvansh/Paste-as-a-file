@@ -96,6 +96,27 @@ namespace PasteIt.Core.Tests
         }
 
         [Fact]
+        public void Resolve_ReturnsMultipleImageFormats_ForImageContent()
+        {
+            var resolver = new ExtensionResolver();
+            using (var bitmap = new System.Drawing.Bitmap(1, 1))
+            using (var content = ClipboardContent.Image(bitmap))
+            {
+                var options = resolver.Resolve(content);
+
+                Assert.Equal(7, options.Count);
+                Assert.True(options[0].IsDefault);
+                Assert.Equal(".png", options[0].Extension);
+                Assert.Contains(options, o => o.Extension == ".jpg");
+                Assert.Contains(options, o => o.Extension == ".webp");
+                Assert.Contains(options, o => o.Extension == ".bmp");
+                Assert.Contains(options, o => o.Extension == ".gif");
+                Assert.Contains(options, o => o.Extension == ".tiff");
+                Assert.Contains(options, o => o.Extension == ".ico");
+            }
+        }
+
+        [Fact]
         public void Resolve_ReturnsOriginalAudioFormatOnly_ForCopiedAudioFiles()
         {
             var resolver = new ExtensionResolver();
