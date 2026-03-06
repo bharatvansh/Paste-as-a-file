@@ -74,41 +74,27 @@ namespace PasteIt.UI
             {
                 TryRunHistoryAction(() =>
                 {
-                    if (!string.IsNullOrEmpty(vm.CopyText))
+                    ClipboardAccessor.Execute<object?>(() =>
                     {
-                        Clipboard.SetText(vm.CopyText);
-                    }
-                    else if (File.Exists(vm.Entry.FilePath))
-                    {
-                        var col = new System.Collections.Specialized.StringCollection();
-                        col.Add(vm.Entry.FilePath);
-                        Clipboard.SetFileDropList(col);
-                    }
-                    else
-                    {
-                        Clipboard.SetText(vm.Entry.FilePath);
-                    }
-                });
-            }
-        }
+                        Clipboard.Clear();
 
-        private void OpenButton_Click(object sender, MouseButtonEventArgs e)
-        {
-            e.Handled = true;
+                        if (!string.IsNullOrEmpty(vm.CopyText))
+                        {
+                            Clipboard.SetText(vm.CopyText);
+                        }
+                        else if (File.Exists(vm.Entry.FilePath))
+                        {
+                            var col = new System.Collections.Specialized.StringCollection();
+                            col.Add(vm.Entry.FilePath);
+                            Clipboard.SetFileDropList(col);
+                        }
+                        else
+                        {
+                            Clipboard.SetText(vm.Entry.FilePath);
+                        }
 
-            if (sender is FrameworkElement el && el.DataContext is HistoryItemViewModel vm)
-            {
-                TryRunHistoryAction(() =>
-                {
-                    if (!File.Exists(vm.Entry.FilePath))
-                    {
-                        throw new FileNotFoundException("The saved file no longer exists.", vm.Entry.FilePath);
-                    }
-
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = vm.Entry.FilePath,
-                        UseShellExecute = true
+                        Clipboard.Flush();
+                        return null;
                     });
                 });
             }
@@ -127,17 +113,22 @@ namespace PasteIt.UI
                         throw new FileNotFoundException("The saved file no longer exists.", vm.Entry.FilePath);
                     }
 
+                    var directoryPath = Path.GetDirectoryName(vm.Entry.FilePath);
+                    if (string.IsNullOrWhiteSpace(directoryPath) || !Directory.Exists(directoryPath))
+                    {
+                        throw new DirectoryNotFoundException("The saved file's folder no longer exists.");
+                    }
+
                     Process.Start(new ProcessStartInfo
                     {
-                        FileName = "explorer.exe",
-                        Arguments = "/select,\"" + vm.Entry.FilePath + "\"",
+                        FileName = directoryPath,
                         UseShellExecute = true
                     });
                 });
             }
         }
 
-        private void DeleteButton_Click(object sender, MouseButtonEventArgs e)
+        private void RemoveButton_Click(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
 
@@ -161,31 +152,13 @@ namespace PasteIt.UI
             LoadHistory();
         }
 
-        private void SearchHistory_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            RefreshHistoryView();
-        }
-
         private void RefreshHistoryView()
         {
-            var query = TxtHistorySearch?.Text;
-            var filteredItems = _historyItems.Where(vm => vm.Matches(query)).ToList();
+            HistoryList.ItemsSource = _historyItems;
 
-            HistoryList.ItemsSource = filteredItems;
-
-            var hasAnyHistory = _historyItems.Count > 0;
-            var hasMatches = filteredItems.Count > 0;
-
-            if (!hasAnyHistory)
+            if (_historyItems.Count == 0)
             {
                 EmptyHistoryLabel.Text = "Nothing here yet. Paste something with Ctrl+Shift+V or the right-click menu.";
-                EmptyHistoryLabel.Visibility = Visibility.Visible;
-                return;
-            }
-
-            if (!hasMatches)
-            {
-                EmptyHistoryLabel.Text = "No history entries match your search.";
                 EmptyHistoryLabel.Visibility = Visibility.Visible;
                 return;
             }
@@ -329,11 +302,6 @@ namespace PasteIt.UI
                         return "(No preview available)";
                 }
             }
-        }
-
-        public bool Matches(string? query)
-        {
-            return HistorySearch.Matches(Entry, query);
         }
 
         public Visibility PreviewVisibility => _showPreview ? Visibility.Visible : Visibility.Collapsed;

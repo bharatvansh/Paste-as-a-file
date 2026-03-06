@@ -24,10 +24,11 @@ namespace PasteIt.Core.Tests
         public void AddEntry_RoundTripsFullText()
         {
             var manager = new HistoryManager();
+            var filePath = CreateTempFile("snippet.cs", new string('z', 220));
             var entry = new HistoryEntry
             {
                 TimestampUtc = new DateTime(2026, 3, 6, 12, 0, 0, DateTimeKind.Utc),
-                FilePath = @"C:\Temp\snippet.cs",
+                FilePath = filePath,
                 ContentType = "Code",
                 DisplayType = "C# (.cs)",
                 FullText = new string('z', 220),
@@ -45,10 +46,11 @@ namespace PasteIt.Core.Tests
         [Fact]
         public void GetEntries_LoadsLegacyRowsWithoutFullText()
         {
+            var filePath = CreateTempFile("note.txt", "legacy preview");
             Directory.CreateDirectory(Path.GetDirectoryName(_historyFilePath)!);
             File.WriteAllText(
                 _historyFilePath,
-                "[{\"TimestampUtc\":\"2026-03-06T12:00:00Z\",\"FilePath\":\"C:\\\\Temp\\\\note.txt\",\"ContentType\":\"Text\",\"DisplayType\":\"Text (.txt)\",\"PreviewText\":\"legacy preview\",\"FileSizeBytes\":12}]");
+                "[{\"TimestampUtc\":\"2026-03-06T12:00:00Z\",\"FilePath\":\"" + filePath.Replace("\\", "\\\\") + "\",\"ContentType\":\"Text\",\"DisplayType\":\"Text (.txt)\",\"PreviewText\":\"legacy preview\",\"FileSizeBytes\":12}]");
 
             var manager = new HistoryManager();
 
@@ -61,10 +63,12 @@ namespace PasteIt.Core.Tests
         public void DeleteEntry_RemovesOnlyMatchingHistoryRow()
         {
             var manager = new HistoryManager();
+            var firstPath = CreateTempFile("first.txt", "first payload");
+            var secondPath = CreateTempFile("second.txt", "second payload");
             var first = new HistoryEntry
             {
                 TimestampUtc = new DateTime(2026, 3, 6, 12, 0, 0, DateTimeKind.Utc),
-                FilePath = @"C:\Temp\first.txt",
+                FilePath = firstPath,
                 ContentType = "Text",
                 DisplayType = "Text (.txt)",
                 FullText = "first payload",
@@ -74,7 +78,7 @@ namespace PasteIt.Core.Tests
             var second = new HistoryEntry
             {
                 TimestampUtc = new DateTime(2026, 3, 6, 12, 1, 0, DateTimeKind.Utc),
-                FilePath = @"C:\Temp\second.txt",
+                FilePath = secondPath,
                 ContentType = "Text",
                 DisplayType = "Text (.txt)",
                 FullText = "second payload",
@@ -90,6 +94,41 @@ namespace PasteIt.Core.Tests
             var entries = manager.GetEntries();
             var remaining = Assert.Single(entries);
             Assert.Equal(first.FilePath, remaining.FilePath);
+        }
+
+        [Fact]
+        public void GetEntries_RemovesRowsWhoseFilesNoLongerExist()
+        {
+            var manager = new HistoryManager();
+            var existingPath = CreateTempFile("keep.txt", "keep");
+            var missingPath = Path.Combine(_appDataRoot, "missing.txt");
+
+            manager.AddEntry(new HistoryEntry
+            {
+                TimestampUtc = new DateTime(2026, 3, 6, 12, 0, 0, DateTimeKind.Utc),
+                FilePath = existingPath,
+                ContentType = "Text",
+                DisplayType = "Text (.txt)",
+                FullText = "keep",
+                PreviewText = "keep",
+                FileSizeBytes = 4
+            });
+            manager.AddEntry(new HistoryEntry
+            {
+                TimestampUtc = new DateTime(2026, 3, 6, 12, 1, 0, DateTimeKind.Utc),
+                FilePath = missingPath,
+                ContentType = "Text",
+                DisplayType = "Text (.txt)",
+                FullText = "missing",
+                PreviewText = "missing",
+                FileSizeBytes = 7
+            });
+
+            var entries = manager.GetEntries();
+
+            var remaining = Assert.Single(entries);
+            Assert.Equal(existingPath, remaining.FilePath);
+            Assert.DoesNotContain(missingPath, File.ReadAllText(_historyFilePath));
         }
 
         [Fact]
@@ -119,6 +158,13 @@ namespace PasteIt.Core.Tests
             {
                 Directory.Delete(_appDataRoot, recursive: true);
             }
+        }
+
+        private string CreateTempFile(string fileName, string contents)
+        {
+            var path = Path.Combine(_appDataRoot, fileName);
+            File.WriteAllText(path, contents);
+            return path;
         }
     }
 }

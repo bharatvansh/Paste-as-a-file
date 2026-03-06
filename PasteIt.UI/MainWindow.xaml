@@ -41,7 +41,6 @@
             <Grid x:Name="HistoryView" Visibility="Visible">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
@@ -50,32 +49,14 @@
                            Foreground="{StaticResource TextPrimaryBrush}"
                            Margin="0,0,0,14" />
 
-                <Border Grid.Row="1"
-                        Background="{StaticResource CardBgBrush}"
-                        CornerRadius="8"
-                        Padding="12,10"
-                        Margin="0,0,0,12"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="1">
-                    <TextBox x:Name="TxtHistorySearch"
-                             TextChanged="SearchHistory_TextChanged"
-                             BorderThickness="0"
-                             Background="Transparent"
-                             FontSize="12.5"
-                             Foreground="{StaticResource TextPrimaryBrush}"
-                             ToolTip="Search history"
-                             Text=""
-                             />
-                </Border>
-
-                <TextBlock x:Name="EmptyHistoryLabel" Grid.Row="2"
+                <TextBlock x:Name="EmptyHistoryLabel" Grid.Row="1"
                            Text="Nothing here yet. Paste something with Ctrl+Shift+V or the right-click menu."
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="13" TextWrapping="Wrap"
                            VerticalAlignment="Center" HorizontalAlignment="Center"
                            Visibility="Collapsed" />
 
-                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
                               Padding="0,0,4,0">
                     <ItemsControl x:Name="HistoryList">
                         <ItemsControl.ItemTemplate>
@@ -139,13 +120,6 @@
                                                            Foreground="{StaticResource AccentBrush}" />
                                             </Border>
                                             <Border VerticalAlignment="Center" Cursor="Hand"
-                                                    MouseLeftButtonUp="OpenButton_Click"
-                                                    Background="Transparent"
-                                                    Padding="6,4">
-                                                <TextBlock Text="Open" FontSize="12"
-                                                           Foreground="{StaticResource AccentBrush}" />
-                                            </Border>
-                                            <Border VerticalAlignment="Center" Cursor="Hand"
                                                     MouseLeftButtonUp="RevealButton_Click"
                                                     Background="Transparent"
                                                     Padding="6,4">
@@ -153,10 +127,10 @@
                                                            Foreground="{StaticResource AccentBrush}" />
                                             </Border>
                                             <Border VerticalAlignment="Center" Cursor="Hand"
-                                                    MouseLeftButtonUp="DeleteButton_Click"
+                                                    MouseLeftButtonUp="RemoveButton_Click"
                                                     Background="Transparent"
                                                     Padding="6,4">
-                                                <TextBlock Text="Delete" FontSize="12"
+                                                <TextBlock Text="Remove" FontSize="12"
                                                            Foreground="{StaticResource DangerBrush}" />
                                             </Border>
                                         </StackPanel>

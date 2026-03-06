@@ -38,7 +38,15 @@ namespace PasteIt.Core
         {
             lock (_lock)
             {
-                return LoadEntriesInternal();
+                var entries = LoadEntriesInternal();
+                var existingEntries = entries.Where(EntryFileExists).ToList();
+
+                if (existingEntries.Count != entries.Count)
+                {
+                    SaveEntries(existingEntries);
+                }
+
+                return existingEntries;
             }
         }
 
@@ -117,6 +125,13 @@ namespace PasteIt.Core
                    string.Equals(left.FullText, right.FullText, StringComparison.Ordinal) &&
                    string.Equals(left.PreviewText, right.PreviewText, StringComparison.Ordinal) &&
                    left.FileSizeBytes == right.FileSizeBytes;
+        }
+
+        private static bool EntryFileExists(HistoryEntry entry)
+        {
+            return entry != null &&
+                   !string.IsNullOrWhiteSpace(entry.FilePath) &&
+                   File.Exists(entry.FilePath);
         }
 
         private static string DataDirectory =>
