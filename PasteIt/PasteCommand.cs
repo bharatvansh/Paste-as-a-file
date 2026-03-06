@@ -68,7 +68,9 @@ namespace PasteIt
         {
             try
             {
-                var preview = content.Type == ClipboardContentType.Image
+                var preview = content.Type == ClipboardContentType.Image ||
+                              content.Type == ClipboardContentType.Audio ||
+                              content.Type == ClipboardContentType.Video
                     ? null
                     : Truncate(content.TextContent, 200);
 

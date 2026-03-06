@@ -6,6 +6,7 @@ PasteIt intelligently detects the clipboard content type:
 - **Plain Text**: Saved as `.txt` files.
 - **Code snippets**: The custom-built language detector identifies nearly 20 languages (Python, JavaScript, TypeScript, C#, Java, C++, C, HTML, CSS, XML, SQL, Go, Rust, Kotlin, Swift, PHP, Ruby, Shell scripts, PowerShell, and JSON) and automatically applies the correct file extension (e.g., `.js`, `.py`, `.sql`).
 - **Images**: Saved automatically as `.png` files.
+- **Video files**: Detects a single copied video file from the clipboard and saves it in its original format. When `ffmpeg` is available on `PATH` or configured in Settings, it can also convert between common formats like `.mp4`, `.mov`, `.avi`, `.mkv`, `.webm`, `.wmv`, `.m4v`, and `.mpeg`.
 - **URLs / Links**: Saved as `.url` Windows Internet shortcuts.
 - **HTML data**: Saved as `.html` pages.
 

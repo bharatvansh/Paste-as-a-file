@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
@@ -17,10 +18,14 @@ namespace PasteIt.Core
     {
         private static readonly System.Text.Encoding _encoding = new System.Text.UTF8Encoding(false);
         private readonly Func<AppSettings> _loadSettings;
+        private readonly VideoTranscodeHandler _videoTranscodeHandler;
 
-        public FileSaver(Func<AppSettings>? loadSettings = null)
+        public delegate void VideoTranscodeHandler(Stream videoStream, string sourceExtension, string outputPath, Func<AppSettings> loadSettings);
+
+        public FileSaver(Func<AppSettings>? loadSettings = null, VideoTranscodeHandler? videoTranscodeHandler = null)
         {
             _loadSettings = loadSettings ?? (() => new SettingsManager().Load());
+            _videoTranscodeHandler = videoTranscodeHandler ?? ConvertVideoWithFfmpeg;
         }
 
         public FileSaveResult Save(ClipboardContent content, string? targetDirectory, DateTime? now = null, string? extensionOverride = null)
@@ -52,6 +57,9 @@ namespace PasteIt.Core
                     break;
                 case ClipboardContentType.Audio:
                     SaveAudio(content, path);
+                    break;
+                case ClipboardContentType.Video:
+                    SaveVideo(content, path, extension);
                     break;
                 case ClipboardContentType.Url:
                     SaveUrlShortcut(content, path);
@@ -121,6 +129,10 @@ namespace PasteIt.Core
                     return ".html";
                 case ClipboardContentType.Code:
                     return string.IsNullOrWhiteSpace(content.SuggestedExtension) ? ".txt" : content.SuggestedExtension!;
+                case ClipboardContentType.Audio:
+                    return string.IsNullOrWhiteSpace(content.SuggestedExtension) ? ".wav" : content.SuggestedExtension!;
+                case ClipboardContentType.Video:
+                    return string.IsNullOrWhiteSpace(content.SuggestedExtension) ? ".mp4" : content.SuggestedExtension!;
                 case ClipboardContentType.Text:
                     return ".txt";
                 default:
@@ -154,6 +166,8 @@ namespace PasteIt.Core
                     return $"Image ({extension})";
                 case ClipboardContentType.Audio:
                     return $"Audio ({extension})";
+                case ClipboardContentType.Video:
+                    return $"Video ({extension})";
                 case ClipboardContentType.Url:
                     return "URL (.url)";
                 case ClipboardContentType.Html:
@@ -179,10 +193,31 @@ namespace PasteIt.Core
                 throw new InvalidOperationException("Audio content is missing.");
             }
 
-            var ext = Path.GetExtension(path);
-            content.AudioContent.Position = 0;
+            var targetExtension = NormalizeExtension(Path.GetExtension(path));
+            var sourceExtension = NormalizeExtension(content.SuggestedExtension ?? ".wav");
 
-            if (string.Equals(ext, ".mp3", StringComparison.OrdinalIgnoreCase))
+            if (content.AudioContent.CanSeek)
+            {
+                content.AudioContent.Position = 0;
+            }
+
+            if (!string.Equals(sourceExtension, ".wav", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(sourceExtension, targetExtension, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        $"Audio clipboard data can only be saved as {sourceExtension} because conversion from the copied source format is not supported.");
+                }
+
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write))
+                {
+                    content.AudioContent.CopyTo(fs);
+                }
+
+                return;
+            }
+
+            if (string.Equals(targetExtension, ".mp3", StringComparison.OrdinalIgnoreCase))
             {
                 using (var reader = new WaveFileReader(content.AudioContent))
                 using (var writer = new LameMP3FileWriter(path, reader.WaveFormat, LAMEPreset.STANDARD))
@@ -190,7 +225,7 @@ namespace PasteIt.Core
                     reader.CopyTo(writer);
                 }
             }
-            else if (string.Equals(ext, ".aac", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(targetExtension, ".aac", StringComparison.OrdinalIgnoreCase))
             {
                 MediaFoundationApi.Startup();
                 using (var reader = new WaveFileReader(content.AudioContent))
@@ -198,7 +233,7 @@ namespace PasteIt.Core
                     MediaFoundationEncoder.EncodeToAac(reader, path);
                 }
             }
-            else if (string.Equals(ext, ".flac", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(targetExtension, ".flac", StringComparison.OrdinalIgnoreCase))
             {
                 using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write))
                 using (var flacStream = new WaveOverFlacStream(fs, WaveOverFlacStreamMode.Encode))
@@ -206,7 +241,7 @@ namespace PasteIt.Core
                     content.AudioContent.CopyTo(flacStream);
                 }
             }
-            else if (string.Equals(ext, ".ogg", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(targetExtension, ".ogg", StringComparison.OrdinalIgnoreCase))
             {
                 using (var reader = new WaveFileReader(content.AudioContent))
                 {
@@ -253,6 +288,139 @@ namespace PasteIt.Core
                 {
                     content.AudioContent.CopyTo(fs);
                 }
+            }
+        }
+
+        private void SaveVideo(ClipboardContent content, string path, string requestedExtension)
+        {
+            if (content.VideoContent == null)
+            {
+                throw new InvalidOperationException("Video content is missing.");
+            }
+
+            var normalizedRequestedExtension = VideoConversionSupport.NormalizeExtension(requestedExtension);
+            var sourceExtension = VideoConversionSupport.NormalizeExtension(content.SuggestedExtension ?? normalizedRequestedExtension);
+
+            if (!string.Equals(normalizedRequestedExtension, sourceExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                _videoTranscodeHandler(content.VideoContent, sourceExtension, path, _loadSettings);
+                return;
+            }
+
+            if (content.VideoContent.CanSeek)
+            {
+                content.VideoContent.Position = 0;
+            }
+
+            using (var output = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                content.VideoContent.CopyTo(output);
+            }
+        }
+
+        private static void ConvertVideoWithFfmpeg(Stream videoStream, string sourceExtension, string outputPath, Func<AppSettings> loadSettings)
+        {
+            var ffmpegPath = VideoConversionSupport.ResolveFfmpegPath(loadSettings);
+            if (string.IsNullOrWhiteSpace(ffmpegPath))
+            {
+                throw new InvalidOperationException(
+                    "Video conversion requires FFmpeg. Add ffmpeg.exe to PATH or set it in Settings.");
+            }
+
+            var normalizedSourceExtension = VideoConversionSupport.NormalizeExtension(sourceExtension);
+            var normalizedOutputExtension = VideoConversionSupport.NormalizeExtension(Path.GetExtension(outputPath));
+            if (!VideoConversionSupport.IsSupportedExtension(normalizedSourceExtension) ||
+                !VideoConversionSupport.IsSupportedExtension(normalizedOutputExtension))
+            {
+                throw new InvalidOperationException("The selected video format is not supported for conversion.");
+            }
+
+            var tempInputPath = Path.Combine(
+                Path.GetTempPath(),
+                "pasteit_video_" + Guid.NewGuid().ToString("N") + normalizedSourceExtension);
+
+            try
+            {
+                if (videoStream.CanSeek)
+                {
+                    videoStream.Position = 0;
+                }
+
+                using (var tempInput = new FileStream(tempInputPath, FileMode.Create, FileAccess.Write))
+                {
+                    videoStream.CopyTo(tempInput);
+                }
+
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = ffmpegPath,
+                    Arguments = BuildFfmpegArguments(tempInputPath, outputPath),
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true
+                };
+
+                using (var process = Process.Start(startInfo))
+                {
+                    if (process == null)
+                    {
+                        throw new InvalidOperationException("Unable to start FFmpeg for video conversion.");
+                    }
+
+                    var standardOutput = process.StandardOutput.ReadToEnd();
+                    var standardError = process.StandardError.ReadToEnd();
+                    process.WaitForExit();
+
+                    if (process.ExitCode != 0 || !File.Exists(outputPath))
+                    {
+                        TryDelete(outputPath);
+
+                        var details = string.IsNullOrWhiteSpace(standardError) ? standardOutput : standardError;
+                        throw new InvalidOperationException(
+                            "FFmpeg could not convert the video." +
+                            (string.IsNullOrWhiteSpace(details) ? string.Empty : " " + details.Trim()));
+                    }
+                }
+            }
+            finally
+            {
+                TryDelete(tempInputPath);
+            }
+        }
+
+        private static string BuildFfmpegArguments(string inputPath, string outputPath)
+        {
+            var outputExtension = VideoConversionSupport.NormalizeExtension(Path.GetExtension(outputPath));
+            var extraArguments = string.Equals(outputExtension, ".mp4", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(outputExtension, ".m4v", StringComparison.OrdinalIgnoreCase)
+                ? " -movflags +faststart"
+                : string.Empty;
+
+            return $"-hide_banner -loglevel error -y -i {QuoteArgument(inputPath)}{extraArguments} {QuoteArgument(outputPath)}";
+        }
+
+        private static string QuoteArgument(string value)
+        {
+            return "\"" + (value ?? string.Empty).Replace("\"", "\\\"") + "\"";
+        }
+
+        private static void TryDelete(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return;
+            }
+
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch
+            {
             }
         }
 

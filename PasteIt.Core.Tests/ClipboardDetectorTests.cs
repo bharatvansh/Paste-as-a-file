@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Specialized;
+using System.IO;
 using PasteIt.Core;
 using Xunit;
 
@@ -27,6 +29,78 @@ namespace PasteIt.Core.Tests
             var normalized = ClipboardDetector.NormalizeHtmlClipboardContent(clipboardHtml);
 
             Assert.Equal("<html><body><p>Hello</p></body></html>", normalized);
+        }
+
+        [Fact]
+        public void IsSupportedAudioExtension_ReturnsTrue_ForKnownAudioFormats()
+        {
+            Assert.True(ClipboardDetector.IsSupportedAudioExtension(".mp3"));
+            Assert.True(ClipboardDetector.IsSupportedAudioExtension(".wav"));
+            Assert.False(ClipboardDetector.IsSupportedAudioExtension(".txt"));
+        }
+
+        [Fact]
+        public void TryCreateAudioContentFromFileDropList_ReturnsAudio_ForSingleSupportedFile()
+        {
+            var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".mp3");
+            File.WriteAllBytes(tempPath, new byte[] { 1, 2, 3, 4 });
+
+            try
+            {
+                var fileDropList = new StringCollection();
+                fileDropList.Add(tempPath);
+
+                using (var content = ClipboardDetector.TryCreateAudioContentFromFileDropList(fileDropList))
+                {
+                    Assert.NotNull(content);
+                    Assert.Equal(ClipboardContentType.Audio, content!.Type);
+                    Assert.Equal(".mp3", content.SuggestedExtension);
+                    Assert.NotNull(content.AudioContent);
+                }
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                {
+                    File.Delete(tempPath);
+                }
+            }
+        }
+
+        [Fact]
+        public void IsSupportedVideoExtension_ReturnsTrue_ForKnownVideoFormats()
+        {
+            Assert.True(ClipboardDetector.IsSupportedVideoExtension(".mp4"));
+            Assert.True(ClipboardDetector.IsSupportedVideoExtension(".webm"));
+            Assert.False(ClipboardDetector.IsSupportedVideoExtension(".txt"));
+        }
+
+        [Fact]
+        public void TryCreateVideoContentFromFileDropList_ReturnsVideo_ForSingleSupportedFile()
+        {
+            var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".mp4");
+            File.WriteAllBytes(tempPath, new byte[] { 10, 20, 30, 40 });
+
+            try
+            {
+                var fileDropList = new StringCollection();
+                fileDropList.Add(tempPath);
+
+                using (var content = ClipboardDetector.TryCreateVideoContentFromFileDropList(fileDropList))
+                {
+                    Assert.NotNull(content);
+                    Assert.Equal(ClipboardContentType.Video, content!.Type);
+                    Assert.Equal(".mp4", content.SuggestedExtension);
+                    Assert.NotNull(content.VideoContent);
+                }
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                {
+                    File.Delete(tempPath);
+                }
+            }
         }
     }
 }

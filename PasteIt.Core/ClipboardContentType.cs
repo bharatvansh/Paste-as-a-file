@@ -9,7 +9,7 @@ namespace PasteIt.Core
         Html = 4,
         Code = 5,
         Text = 6,
-        Audio = 7
+        Audio = 7,
+        Video = 8
     }
 }
-

@@ -94,5 +94,51 @@ namespace PasteIt.Core.Tests
             Assert.True(options[0].IsDefault);
             Assert.Equal(".url", options[0].Extension);
         }
+
+        [Fact]
+        public void Resolve_ReturnsOriginalAudioFormatOnly_ForCopiedAudioFiles()
+        {
+            var resolver = new ExtensionResolver();
+            using (var content = ClipboardContent.Audio(new System.IO.MemoryStream(new byte[] { 1, 2, 3 }), ".mp3"))
+            {
+                var options = resolver.Resolve(content);
+
+                Assert.Single(options);
+                Assert.True(options[0].IsDefault);
+                Assert.Equal(".mp3", options[0].Extension);
+                Assert.Equal("MP3", options[0].Label);
+            }
+        }
+
+        [Fact]
+        public void Resolve_ReturnsOriginalVideoFormatOnly_WhenVideoConversionUnavailable()
+        {
+            var resolver = new ExtensionResolver(() => false);
+            using (var content = ClipboardContent.Video(new System.IO.MemoryStream(new byte[] { 1, 2, 3 }), ".webm"))
+            {
+                var options = resolver.Resolve(content);
+
+                Assert.Single(options);
+                Assert.True(options[0].IsDefault);
+                Assert.Equal(".webm", options[0].Extension);
+                Assert.Equal("WebM Video", options[0].Label);
+            }
+        }
+
+        [Fact]
+        public void Resolve_ReturnsMultipleVideoFormats_WhenVideoConversionAvailable()
+        {
+            var resolver = new ExtensionResolver(() => true);
+            using (var content = ClipboardContent.Video(new System.IO.MemoryStream(new byte[] { 1, 2, 3 }), ".mp4"))
+            {
+                var options = resolver.Resolve(content);
+
+                Assert.Equal(".mp4", options[0].Extension);
+                Assert.True(options[0].IsDefault);
+                Assert.Contains(options, o => o.Extension == ".webm");
+                Assert.Contains(options, o => o.Extension == ".mkv");
+                Assert.True(options.Count > 1);
+            }
+        }
     }
 }

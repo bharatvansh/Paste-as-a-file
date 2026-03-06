@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Specialized;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
@@ -7,6 +8,17 @@ namespace PasteIt.Core
 {
     public sealed class ClipboardDetector
     {
+        private static readonly string[] SupportedAudioExtensions =
+        {
+            ".wav",
+            ".mp3",
+            ".flac",
+            ".ogg",
+            ".aac",
+            ".m4a",
+            ".wma"
+        };
+
         private readonly CodeLanguageDetector _languageDetector;
 
         public ClipboardDetector(CodeLanguageDetector? languageDetector = null)
@@ -23,6 +35,18 @@ namespace PasteIt.Core
         {
             if (Clipboard.ContainsFileDropList())
             {
+                var audioContent = TryCreateAudioContentFromFileDropList(Clipboard.GetFileDropList());
+                if (audioContent != null)
+                {
+                    return audioContent;
+                }
+
+                var videoContent = TryCreateVideoContentFromFileDropList(Clipboard.GetFileDropList());
+                if (videoContent != null)
+                {
+                    return videoContent;
+                }
+
                 return ClipboardContent.FileDropList();
             }
 
@@ -76,7 +100,7 @@ namespace PasteIt.Core
                 return ClipboardContent.None();
             }
 
-            var text = rawText.Trim();
+            var text = rawText!.Trim();
 
             if (LooksLikeUrl(text))
             {
@@ -90,6 +114,99 @@ namespace PasteIt.Core
             }
 
             return ClipboardContent.Text(text);
+        }
+
+        internal static ClipboardContent? TryCreateAudioContentFromFileDropList(StringCollection? fileDropList)
+        {
+            if (fileDropList == null || fileDropList.Count != 1)
+            {
+                return null;
+            }
+
+            var filePath = fileDropList[0];
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            {
+                return null;
+            }
+
+            var extension = Path.GetExtension(filePath);
+            if (!IsSupportedAudioExtension(extension))
+            {
+                return null;
+            }
+
+            try
+            {
+                var stream = new FileStream(
+                    filePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete);
+
+                return ClipboardContent.Audio(stream, extension);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        internal static ClipboardContent? TryCreateVideoContentFromFileDropList(StringCollection? fileDropList)
+        {
+            if (fileDropList == null || fileDropList.Count != 1)
+            {
+                return null;
+            }
+
+            var filePath = fileDropList[0];
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            {
+                return null;
+            }
+
+            var extension = Path.GetExtension(filePath);
+            if (!IsSupportedVideoExtension(extension))
+            {
+                return null;
+            }
+
+            try
+            {
+                var stream = new FileStream(
+                    filePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete);
+
+                return ClipboardContent.Video(stream, extension);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        internal static bool IsSupportedVideoExtension(string? extension)
+        {
+            return VideoConversionSupport.IsSupportedExtension(extension);
+        }
+
+        internal static bool IsSupportedAudioExtension(string? extension)
+        {
+            if (string.IsNullOrWhiteSpace(extension))
+            {
+                return false;
+            }
+
+            foreach (var supportedExtension in SupportedAudioExtensions)
+            {
+                if (string.Equals(supportedExtension, extension, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal static string NormalizeHtmlClipboardContent(string html)

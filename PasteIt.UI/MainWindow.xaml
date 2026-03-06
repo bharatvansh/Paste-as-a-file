@@ -202,6 +202,21 @@
                             </DockPanel>
                         </Border>
 
+                        <Border Background="{StaticResource CardBgBrush}" CornerRadius="8"
+                                Padding="14,12" Margin="0,0,0,6"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Left" MaxWidth="280">
+                                    <TextBlock Text="FFmpeg path" FontSize="13" FontWeight="Medium"
+                                               Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <TextBlock Text="Optional. Needed for converting pasted videos to other formats." FontSize="11.5"
+                                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <TextBox x:Name="TxtFfmpegPath" DockPanel.Dock="Right"
+                                         Width="170" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                            </DockPanel>
+                        </Border>
+
                         <!-- Auto-start -->
                         <Border Background="{StaticResource CardBgBrush}" CornerRadius="8"
                                 Padding="14,12" Margin="0,0,0,6"

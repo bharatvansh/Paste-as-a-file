@@ -79,9 +79,9 @@ namespace PasteIt.UI
             {
                 try
                 {
-                    if (!string.IsNullOrEmpty(vm.PreviewText) && vm.PreviewText != "(Image file)")
+                    if (!string.IsNullOrEmpty(vm.Entry.PreviewText))
                     {
-                        Clipboard.SetText(vm.PreviewText);
+                        Clipboard.SetText(vm.Entry.PreviewText);
                     }
                     else if (File.Exists(vm.Entry.FilePath))
                     {
@@ -106,6 +106,7 @@ namespace PasteIt.UI
             TxtMaxHistory.Text = s.MaxHistoryItems.ToString();
             TxtFilenamePrefix.Text = s.FilenamePrefix;
             TxtDefaultSaveLocation.Text = s.DefaultSaveLocation ?? string.Empty;
+            TxtFfmpegPath.Text = s.FfmpegPath ?? string.Empty;
             ChkAutoStart.IsChecked = s.AutoStartOnBoot;
         }
 
@@ -121,6 +122,9 @@ namespace PasteIt.UI
 
             settings.DefaultSaveLocation = string.IsNullOrWhiteSpace(TxtDefaultSaveLocation.Text)
                 ? null : TxtDefaultSaveLocation.Text.Trim();
+
+            settings.FfmpegPath = string.IsNullOrWhiteSpace(TxtFfmpegPath.Text)
+                ? null : TxtFfmpegPath.Text.Trim();
 
             settings.AutoStartOnBoot = ChkAutoStart.IsChecked == true;
 
@@ -161,6 +165,8 @@ namespace PasteIt.UI
                 switch (Entry.ContentType)
                 {
                     case "Image": return "IMG";
+                    case "Audio": return "AUD";
+                    case "Video": return "VID";
                     case "Url": return "URL";
                     case "Html": return "HTML";
                     case "Code": return "CODE";
@@ -194,7 +200,28 @@ namespace PasteIt.UI
             }
         }
 
-        public string PreviewText => Entry.PreviewText ?? "(Image file)";
+        public string PreviewText
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(Entry.PreviewText))
+                {
+                    return Entry.PreviewText!;
+                }
+
+                switch (Entry.ContentType)
+                {
+                    case "Image":
+                        return "(Image file)";
+                    case "Audio":
+                        return "(Audio file)";
+                    case "Video":
+                        return "(Video file)";
+                    default:
+                        return "(No preview available)";
+                }
+            }
+        }
 
         public Visibility PreviewVisibility => _showPreview ? Visibility.Visible : Visibility.Collapsed;
 
