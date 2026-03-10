@@ -18,6 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\ThirdParty\FFmpeg\ffmpeg.exe" Link="ffmpeg.exe" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\ThirdParty\FFmpeg\ffmpeg.exe')" />
+    <None Include="..\ThirdParty\FFmpeg\LICENSE.txt" Link="ffmpeg-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\ThirdParty\FFmpeg\LICENSE.txt')" />
+    <None Include="..\ThirdParty\FFmpeg\README.txt" Link="ffmpeg-README.txt" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\ThirdParty\FFmpeg\README.txt')" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>PasteIt.Core.Tests</_Parameter1>
     </AssemblyAttribute>

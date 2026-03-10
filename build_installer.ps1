@@ -1,9 +1,42 @@
 $ErrorActionPreference = "Stop"
 
+$BundledFfmpegPath = Join-Path $PSScriptRoot "ThirdParty\FFmpeg\ffmpeg.exe"
+if (-not (Test-Path $BundledFfmpegPath)) {
+    Write-Error "Bundled FFmpeg was not found at $BundledFfmpegPath. Add ffmpeg.exe there before building the installer."
+    exit 1
+}
+
+$BundledFfmpegLicensePath = Join-Path $PSScriptRoot "ThirdParty\FFmpeg\LICENSE.txt"
+if (-not (Test-Path $BundledFfmpegLicensePath)) {
+    Write-Error "Bundled FFmpeg license file was not found at $BundledFfmpegLicensePath. Add the bundled LICENSE there before building the installer."
+    exit 1
+}
+
+$DotnetCommand = $null
+$DotnetCandidate = Get-Command dotnet.exe -ErrorAction SilentlyContinue
+if ($DotnetCandidate) {
+    $DotnetCommand = $DotnetCandidate.Source
+}
+
+if (-not $DotnetCommand) {
+    $FallbackDotnet = "C:\Program Files\dotnet\dotnet.exe"
+    if (Test-Path $FallbackDotnet) {
+        $DotnetCommand = $FallbackDotnet
+    }
+}
+
+if (-not $DotnetCommand) {
+    Write-Error "dotnet.exe was not found on PATH or at C:\Program Files\dotnet\dotnet.exe."
+    exit 1
+}
+
 Write-Host "Compiling PasteIt Solution (Release Mode)..." -ForegroundColor Cyan
-dotnet build .\PasteIt.sln -c Release
+Push-Location $PSScriptRoot
+
+& $DotnetCommand build .\PasteIt.sln -c Release
 
 if ($LASTEXITCODE -ne 0) {
+    Pop-Location
     Write-Error "dotnet build failed. Installer will not be built."
     exit 1
 }
@@ -32,9 +65,12 @@ Write-Host "Building PasteIt_Setup.exe using Inno Setup..." -ForegroundColor Cya
 & $InnoSetupCompiler .\PasteIt.iss
 
 if ($LASTEXITCODE -ne 0) {
+    Pop-Location
     Write-Error "Inno Setup failed to build the installer."
     exit 1
 }
+
+Pop-Location
 
 Write-Host ""
 Write-Host "SUCCESS! The installer has been created at:" -ForegroundColor Green

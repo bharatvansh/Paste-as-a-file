@@ -26,6 +26,10 @@ Source: "PasteItExtension\bin\Release\net48\PasteItExtension.dll"; DestDir: "{ap
 Source: "PasteItExtension\bin\Release\net48\SharpShell.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
 ; Core library
 Source: "PasteItExtension\bin\Release\net48\PasteIt.Core.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+; Bundled FFmpeg
+Source: "ThirdParty\FFmpeg\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
+Source: "ThirdParty\FFmpeg\LICENSE.txt"; DestDir: "{app}"; DestName: "ffmpeg-LICENSE.txt"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
+Source: "ThirdParty\FFmpeg\README.txt"; DestDir: "{app}"; DestName: "ffmpeg-README.txt"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 ; Any other DLLs
 Source: "PasteIt\bin\Release\net48\*.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist; Excludes: "PasteIt.Core.dll,SharpShell.dll"
 

@@ -239,7 +239,7 @@
                                 <StackPanel DockPanel.Dock="Left" MaxWidth="280">
                                     <TextBlock Text="FFmpeg path" FontSize="13" FontWeight="Medium"
                                                Foreground="{StaticResource TextPrimaryBrush}" />
-                                    <TextBlock Text="Optional. Needed for converting pasted videos to other formats." FontSize="11.5"
+                                    <TextBlock Text="Optional override. Leave empty to use the bundled FFmpeg automatically." FontSize="11.5"
                                                Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <TextBox x:Name="TxtFfmpegPath" DockPanel.Dock="Right"

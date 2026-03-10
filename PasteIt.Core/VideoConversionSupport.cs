@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace PasteIt.Core
 {
@@ -53,6 +54,12 @@ namespace PasteIt.Core
             {
             }
 
+            var bundledPath = ResolveBundledFfmpegPath();
+            if (!string.IsNullOrWhiteSpace(bundledPath))
+            {
+                return bundledPath;
+            }
+
             var pathValue = Environment.GetEnvironmentVariable("PATH");
             if (string.IsNullOrWhiteSpace(pathValue))
             {
@@ -87,6 +94,62 @@ namespace PasteIt.Core
             }
 
             return null;
+        }
+
+        internal static string? ResolveBundledFfmpegPath(string? baseDirectory = null)
+        {
+            foreach (var directory in GetCandidateDirectories(baseDirectory))
+            {
+                try
+                {
+                    var candidate = Path.Combine(directory, "ffmpeg.exe");
+                    if (File.Exists(candidate))
+                    {
+                        return Path.GetFullPath(candidate);
+                    }
+
+                    candidate = Path.Combine(directory, "ffmpeg");
+                    if (File.Exists(candidate))
+                    {
+                        return Path.GetFullPath(candidate);
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return null;
+        }
+
+        private static IEnumerable<string> GetCandidateDirectories(string? baseDirectory)
+        {
+            if (!string.IsNullOrWhiteSpace(baseDirectory))
+            {
+                yield return baseDirectory!;
+                yield break;
+            }
+
+            var appBaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            if (!string.IsNullOrWhiteSpace(appBaseDirectory))
+            {
+                yield return appBaseDirectory;
+            }
+
+            var entryAssemblyDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
+            if (!string.IsNullOrWhiteSpace(entryAssemblyDirectory) &&
+                !string.Equals(entryAssemblyDirectory, appBaseDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return entryAssemblyDirectory;
+            }
+
+            var currentAssemblyDirectory = Path.GetDirectoryName(typeof(VideoConversionSupport).GetTypeInfo().Assembly.Location);
+            if (!string.IsNullOrWhiteSpace(currentAssemblyDirectory) &&
+                !string.Equals(currentAssemblyDirectory, appBaseDirectory, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(currentAssemblyDirectory, entryAssemblyDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return currentAssemblyDirectory;
+            }
         }
 
         public static IReadOnlyList<FileExtensionOption> BuildVideoOptions(string sourceExtension, bool canConvert)

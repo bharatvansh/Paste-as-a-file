@@ -12,7 +12,7 @@ PasteIt detects the clipboard content type and offers matching file extensions i
 - **Code snippets / structured text**: Detects many formats including Python, JavaScript, TypeScript, C#, Java, C/C++, HTML, CSS, XML, SQL, Go, Rust, Kotlin, Swift, PHP, Ruby, Shell, PowerShell, Dart, JSON, Markdown, TOML, JSX, TSX, batch, and cmd.
 - **Images**: Offers `.png` by default, plus `.jpg`, `.webp`, `.bmp`, `.gif`, `.tiff`, and `.ico`.
 - **Audio**: Saves raw clipboard audio as `.wav` by default, with `.mp3`, `.flac`, `.ogg`, and `.aac` also available. If the clipboard contains a single copied audio file, PasteIt preserves its original format.
-- **Video files**: Detects a single copied video file and saves it in its original format. If `ffmpeg` is on `PATH` or configured in Settings, PasteIt can also convert between `.mp4`, `.mov`, `.avi`, `.mkv`, `.webm`, `.wmv`, `.m4v`, `.mpg`, and `.mpeg`.
+- **Video files**: Detects a single copied video file and saves it in its original format. PasteIt bundles `ffmpeg.exe` so video conversion works out of the box, and you can still override it in Settings or via `PATH` if needed.
 - **URLs / links**: Saved as `.url` Windows Internet shortcuts.
 - **HTML**: Saved as `.html`, with `.htm` and `.txt` also offered.
 
@@ -24,7 +24,7 @@ If the clipboard already contains regular files, PasteIt intentionally does noth
 - **Explorer-aware hotkey**: `Ctrl+Shift+V` pastes into the currently focused Explorer folder.
 - **Dynamic format options**: The menu changes based on the current clipboard contents.
 - **History UI**: Stores paste history locally and shows previews for text-based entries plus file metadata for binary content.
-- **Settings UI**: Configure history retention, filename prefix, default save location, and optional `ffmpeg` path.
+- **Settings UI**: Configure history retention, filename prefix, default save location, and an optional FFmpeg override path.
 - **Safe file naming**: Creates timestamped filenames and avoids overwriting existing files.
 - **Toast notifications**: Shows success and error feedback after each paste.
 
@@ -47,7 +47,7 @@ An Inno Setup installer is included.
 3. The installer is generated at `Output/PasteIt_Setup.exe`.
 4. Run `Output/PasteIt_Setup.exe` as Administrator on a Windows x64 machine.
 
-The installer copies the binaries, registers the shell extension, and launches `PasteIt.exe --service` once as the desktop user so startup registration happens under the correct user profile.
+The installer copies the binaries, includes a bundled `ffmpeg.exe` plus its accompanying notice files, registers the shell extension, and launches `PasteIt.exe --service` once as the desktop user so startup registration happens under the correct user profile.
 
 ## Building And Testing
 
@@ -90,7 +90,8 @@ For development or tests, the storage location can be overridden with the `PASTE
 
 ## Notes
 
-- Video conversion requires `ffmpeg`.
+- Video conversion uses the bundled `ffmpeg.exe` by default.
+- If you set an FFmpeg path in Settings, that override takes precedence over the bundled copy.
 - The default filename prefix is `clipboard`.
 - If no explicit target directory is available, PasteIt falls back to the Desktop.
 
@@ -101,4 +102,3 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
