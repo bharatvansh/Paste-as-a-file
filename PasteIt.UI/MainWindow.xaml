@@ -28,7 +28,7 @@
                     <Button x:Name="BtnSettings" Content="Settings" Click="BtnSettings_Click" />
                 </StackPanel>
 
-                <TextBlock DockPanel.Dock="Bottom" Text="v1.0.0"
+                <TextBlock x:Name="TxtSidebarVersion" DockPanel.Dock="Bottom" Text="v0.0.0"
                            Foreground="{StaticResource TextSecondaryBrush}"
                            FontSize="11" Margin="18,0,0,0" />
             </DockPanel>
@@ -245,6 +245,56 @@
                                 <TextBox x:Name="TxtFfmpegPath" DockPanel.Dock="Right"
                                          Width="170" VerticalAlignment="Center" HorizontalAlignment="Right" />
                             </DockPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource CardBgBrush}" CornerRadius="8"
+                                Padding="14,12" Margin="0,0,0,6"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                            <StackPanel>
+                                <CheckBox x:Name="ChkEnableAutoUpdates" Content="Install updates automatically when available" />
+                                <TextBlock Text="Enabled by default. When turned off, PasteIt will only notify you and let you install updates manually."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Margin="26,6,0,0"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource CardBgBrush}" CornerRadius="8"
+                                Padding="14,12" Margin="0,0,0,6"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                    <TextBlock Text="App updates" FontSize="13" FontWeight="Medium"
+                                               Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <TextBlock x:Name="TxtCurrentVersion"
+                                               Text="Current version: v0.0.0"
+                                               FontSize="11.5"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               Margin="0,4,0,0" />
+                                    <TextBlock x:Name="TxtLastUpdateCheck"
+                                               Text="Last checked: Never"
+                                               FontSize="11.5"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               Margin="0,2,0,0" />
+                                    <TextBlock x:Name="TxtUpdateStatus"
+                                               Text="No update check has run yet."
+                                               FontSize="11.5"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               Margin="0,6,0,0"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Border Grid.Column="1" Cursor="Hand" MouseLeftButtonUp="CheckForUpdates_Click"
+                                        Background="{StaticResource AccentBrush}"
+                                        CornerRadius="6" Padding="16,7"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="Check now" FontSize="12.5" Foreground="White" />
+                                </Border>
+                            </Grid>
                         </Border>
 
                     </StackPanel>

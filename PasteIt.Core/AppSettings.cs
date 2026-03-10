@@ -7,5 +7,8 @@ namespace PasteIt.Core
         public string? DefaultSaveLocation { get; set; }
         public string? FfmpegPath { get; set; }
         public bool EnableHistory { get; set; } = true;
+        public bool EnableAutoUpdates { get; set; } = true;
+        public System.DateTime? LastUpdateCheckUtc { get; set; }
+        public string? SkippedVersion { get; set; }
     }
 }

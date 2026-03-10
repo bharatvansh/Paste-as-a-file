@@ -1,6 +1,10 @@
+#ifndef AppVersion
+#define AppVersion "1.1.0"
+#endif
+
 [Setup]
 AppName=PasteIt
-AppVersion=1.0.0
+AppVersion={#AppVersion}
 AppPublisher=PasteIt Open Source
 DefaultDirName={autopf}\PasteIt
 DefaultGroupName=PasteIt
@@ -13,6 +17,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 DirExistsWarning=no
 SetupIconFile=PasteIt.Core\Resources\logo.ico
+VersionInfoVersion={#AppVersion}
 
 [Files]
 ; Main service

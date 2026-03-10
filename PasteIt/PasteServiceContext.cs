@@ -23,6 +23,8 @@ namespace PasteIt
                 _toast?.Dispose();
                 throw;
             }
+
+            UpdateWorkflow.CheckForUpdatesInBackground();
         }
 
         private void HandleHotkeyPressed(object? sender, System.EventArgs e)

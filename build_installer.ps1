@@ -1,5 +1,12 @@
 $ErrorActionPreference = "Stop"
 
+[xml]$BuildProps = Get-Content (Join-Path $PSScriptRoot "Directory.Build.props")
+$AppVersion = $BuildProps.Project.PropertyGroup.Version
+if ([string]::IsNullOrWhiteSpace($AppVersion)) {
+    Write-Error "Version was not found in Directory.Build.props."
+    exit 1
+}
+
 $BundledFfmpegPath = Join-Path $PSScriptRoot "ThirdParty\FFmpeg\ffmpeg.exe"
 if (-not (Test-Path $BundledFfmpegPath)) {
     Write-Error "Bundled FFmpeg was not found at $BundledFfmpegPath. Add ffmpeg.exe there before building the installer."
@@ -62,7 +69,7 @@ if (-not $InnoSetupCompiler) {
 
 Write-Host ""
 Write-Host "Building PasteIt_Setup.exe using Inno Setup..." -ForegroundColor Cyan
-& $InnoSetupCompiler .\PasteIt.iss
+& $InnoSetupCompiler "/DAppVersion=$AppVersion" .\PasteIt.iss
 
 if ($LASTEXITCODE -ne 0) {
     Pop-Location

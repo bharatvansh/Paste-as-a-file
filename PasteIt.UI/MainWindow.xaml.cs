@@ -20,6 +20,8 @@ namespace PasteIt.UI
         public MainWindow()
         {
             InitializeComponent();
+            Title = "PasteIt v" + AppVersionInfo.GetDisplayVersion();
+            TxtSidebarVersion.Text = "v" + AppVersionInfo.GetDisplayVersion();
             LoadHistory();
             LoadSettings();
 
@@ -214,6 +216,10 @@ namespace PasteIt.UI
             TxtDefaultSaveLocation.Text = s.DefaultSaveLocation ?? string.Empty;
             TxtFfmpegPath.Text = s.FfmpegPath ?? string.Empty;
             ChkEnableHistory.IsChecked = s.EnableHistory;
+            ChkEnableAutoUpdates.IsChecked = s.EnableAutoUpdates;
+            TxtCurrentVersion.Text = "Current version: v" + AppVersionInfo.GetDisplayVersion();
+            TxtLastUpdateCheck.Text = "Last checked: " + FormatUpdateCheckTime(s.LastUpdateCheckUtc);
+            TxtUpdateStatus.Text = "Updates are checked from GitHub Releases.";
         }
 
         private void SaveSettings_Click(object sender, MouseButtonEventArgs e)
@@ -233,10 +239,16 @@ namespace PasteIt.UI
                 ? null : TxtFfmpegPath.Text.Trim();
 
             settings.EnableHistory = ChkEnableHistory.IsChecked != false;
+            settings.EnableAutoUpdates = ChkEnableAutoUpdates.IsChecked != false;
+
+            var existingSettings = _settingsManager.Load();
+            settings.LastUpdateCheckUtc = existingSettings.LastUpdateCheckUtc;
+            settings.SkippedVersion = existingSettings.SkippedVersion;
 
             _settingsManager.Save(settings);
 
             MessageBox.Show("Settings saved.", "PasteIt", MessageBoxButton.OK, MessageBoxImage.Information);
+            LoadSettings();
         }
 
         private void ClearHistory_Click(object sender, MouseButtonEventArgs e)
@@ -250,6 +262,98 @@ namespace PasteIt.UI
                 _historyManager.ClearHistory();
                 LoadHistory();
             }
+        }
+
+        private async void CheckForUpdates_Click(object sender, MouseButtonEventArgs e)
+        {
+            TxtUpdateStatus.Text = "Checking GitHub Releases for updates...";
+
+            try
+            {
+                var result = await System.Threading.Tasks.Task.Run(() => new UpdateChecker().CheckForUpdates(manualCheck: true));
+                LoadSettings();
+
+                if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                {
+                    TxtUpdateStatus.Text = "Update check failed: " + result.ErrorMessage;
+                    MessageBox.Show(result.ErrorMessage, "PasteIt", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                if (!result.IsUpdateAvailable || result.UpdateInfo == null)
+                {
+                    TxtUpdateStatus.Text = "You're up to date.";
+                    MessageBox.Show("You're already on the latest version.", "PasteIt", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                TxtUpdateStatus.Text = "PasteIt " + result.UpdateInfo.VersionString + " is available.";
+
+                var settings = _settingsManager.Load();
+                if (settings.EnableAutoUpdates)
+                {
+                    var autoResult = MessageBox.Show(
+                        "PasteIt " + result.UpdateInfo.VersionString + " is available.\n\nInstall it now?",
+                        "PasteIt Update Available",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Information);
+
+                    if (autoResult == MessageBoxResult.Yes)
+                    {
+                        new UpdateChecker().ClearSkippedVersion();
+                        await System.Threading.Tasks.Task.Run(() =>
+                        {
+                            var installer = new UpdateInstaller();
+                            var installerPath = installer.DownloadInstaller(result.UpdateInfo);
+                            installer.LaunchInstaller(installerPath, silent: true);
+                        });
+                        Application.Current.Shutdown();
+                    }
+
+                    return;
+                }
+
+                var manualResult = MessageBox.Show(
+                    "PasteIt " + result.UpdateInfo.VersionString + " is available.\n\nYes = Download and open installer\nNo = Later\nCancel = Skip this version",
+                    "PasteIt Update Available",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Information);
+
+                if (manualResult == MessageBoxResult.Cancel)
+                {
+                    new UpdateChecker().SkipVersion(result.UpdateInfo.VersionString);
+                    LoadSettings();
+                    TxtUpdateStatus.Text = "This version will be skipped until a newer release is published.";
+                    return;
+                }
+
+                if (manualResult == MessageBoxResult.Yes)
+                {
+                    new UpdateChecker().ClearSkippedVersion();
+                    await System.Threading.Tasks.Task.Run(() =>
+                    {
+                        var installer = new UpdateInstaller();
+                        var installerPath = installer.DownloadInstaller(result.UpdateInfo);
+                        installer.LaunchInstaller(installerPath, silent: false);
+                    });
+                    Application.Current.Shutdown();
+                }
+            }
+            catch (Exception ex)
+            {
+                TxtUpdateStatus.Text = "Update check failed: " + ex.Message;
+                MessageBox.Show(ex.Message, "PasteIt", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private static string FormatUpdateCheckTime(DateTime? lastCheckedUtc)
+        {
+            if (!lastCheckedUtc.HasValue)
+            {
+                return "Never";
+            }
+
+            return lastCheckedUtc.Value.ToLocalTime().ToString("g");
         }
 
     }
