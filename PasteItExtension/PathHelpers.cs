@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Versioning;
 using Microsoft.Win32;
 
 namespace PasteItExtension
 {
-    [SupportedOSPlatform("windows")]
     internal static class PathHelpers
     {
         public static string? ResolvePasteItExecutablePath()

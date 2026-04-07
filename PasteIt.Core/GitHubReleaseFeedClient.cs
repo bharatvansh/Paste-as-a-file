@@ -35,11 +35,19 @@ namespace PasteIt.Core
             {
                 request.Headers.Accept.ParseAdd("application/vnd.github+json");
 
+#if NET48
+                using (var response = HttpClient.SendAsync(request).GetAwaiter().GetResult())
+#else
                 using (var response = HttpClient.Send(request))
+#endif
                 {
                     response.EnsureSuccessStatusCode();
 
+#if NET48
+                    using (var stream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult())
+#else
                     using (var stream = response.Content.ReadAsStream())
+#endif
                     using (var reader = new StreamReader(stream ?? Stream.Null))
                     {
                         var json = reader.ReadToEnd();

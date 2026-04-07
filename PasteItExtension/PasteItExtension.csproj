@@ -1,10 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <EnableComHosting>true</EnableComHosting>
+    <TargetFramework>net48</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <NoWarn>$(NoWarn);AD0001</NoWarn>
     <AssemblyName>PasteItExtension</AssemblyName>
     <RootNamespace>PasteItExtension</RootNamespace>
   </PropertyGroup>
@@ -14,7 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SharpShell" Version="2.7.2" NoWarn="NU1701" />
+    <PackageReference Include="SharpShell" Version="2.7.2" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

@@ -30,10 +30,19 @@ namespace PasteIt
 
             try
             {
-                var args = unregister ? $"/u /s \"{resolvedPath}\"" : $"/s \"{resolvedPath}\"";
+                var regAsmPath = ResolveRegAsmPath();
+                if (string.IsNullOrWhiteSpace(regAsmPath) || !File.Exists(regAsmPath))
+                {
+                    return 1;
+                }
+
+                var args = unregister
+                    ? $"/u \"{resolvedPath}\""
+                    : $"/codebase \"{resolvedPath}\"";
+
                 using var process = Process.Start(new ProcessStartInfo
                 {
-                    FileName = "regsvr32.exe",
+                    FileName = regAsmPath,
                     Arguments = args,
                     UseShellExecute = false,
                     CreateNoWindow = true
@@ -59,22 +68,22 @@ namespace PasteIt
 
         private static string ResolveShellExtensionPath(string? shellExtensionPath)
         {
-            var path = !string.IsNullOrWhiteSpace(shellExtensionPath)
+            return !string.IsNullOrWhiteSpace(shellExtensionPath)
                 ? shellExtensionPath!
                 : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PasteItExtension.dll");
+        }
 
-            if (!path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+        private static string? ResolveRegAsmPath()
+        {
+            var windowsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            var framework64 = Path.Combine(windowsDirectory, "Microsoft.NET", "Framework64", "v4.0.30319", "regasm.exe");
+            if (File.Exists(framework64))
             {
-                return path;
+                return framework64;
             }
 
-            var directory = Path.GetDirectoryName(path);
-            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-            var comHostFileName = $"{fileNameWithoutExtension}.comhost.dll";
-
-            return string.IsNullOrEmpty(directory)
-                ? comHostFileName
-                : Path.Combine(directory, comHostFileName);
+            var framework = Path.Combine(windowsDirectory, "Microsoft.NET", "Framework", "v4.0.30319", "regasm.exe");
+            return File.Exists(framework) ? framework : null;
         }
 
         private static void RefreshShellAssociations()

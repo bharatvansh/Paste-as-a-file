@@ -222,7 +222,7 @@ namespace PasteIt.Core
                 return CodeDetectionResult.NoMatch();
             }
 
-            var text = rawText.Trim();
+            var text = rawText!.Trim();
 
             if (LooksLikeJson(text))
             {

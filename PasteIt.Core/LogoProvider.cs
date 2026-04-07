@@ -2,11 +2,15 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
+#if NET5_0_OR_GREATER
 using System.Runtime.Versioning;
+#endif
 
 namespace PasteIt.Core
 {
+#if NET5_0_OR_GREATER
     [SupportedOSPlatform("windows")]
+#endif
     public static class LogoProvider
     {
         public static Image? GetLogo()
