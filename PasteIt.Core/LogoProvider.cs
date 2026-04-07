@@ -2,12 +2,14 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Versioning;
 
 namespace PasteIt.Core
 {
+    [SupportedOSPlatform("windows")]
     public static class LogoProvider
     {
-        public static Image GetLogo()
+        public static Image? GetLogo()
         {
             try
             {

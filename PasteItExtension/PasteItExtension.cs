@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Windows.Forms;
 using PasteIt.Core;
@@ -16,6 +17,7 @@ namespace PasteItExtension
     [Guid("E6FB1156-2AA7-4E08-B889-9F411F944DA2")]
     [COMServerAssociation(AssociationType.Directory)]
     [COMServerAssociation(AssociationType.DirectoryBackground)]
+    [SupportedOSPlatform("windows")]
     public class PasteItExtension : SharpContextMenu
     {
         protected override bool CanShowMenu()

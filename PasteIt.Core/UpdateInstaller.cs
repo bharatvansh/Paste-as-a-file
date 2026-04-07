@@ -1,12 +1,14 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
+using System.Net.Http;
 
 namespace PasteIt.Core
 {
     public sealed class UpdateInstaller
     {
+        private static readonly HttpClient HttpClient = CreateHttpClient();
+
         public string DownloadInstaller(UpdateInfo updateInfo)
         {
             if (updateInfo == null)
@@ -22,13 +24,26 @@ namespace PasteIt.Core
             var fileName = "PasteIt_Setup_" + updateInfo.VersionString + ".exe";
             var targetPath = Path.Combine(Path.GetTempPath(), fileName);
 
-            using (var client = new WebClient())
+            using (var request = new HttpRequestMessage(HttpMethod.Get, updateInfo.InstallerUrl))
+            using (var response = HttpClient.Send(request))
+            using (var installerStream = response.Content.ReadAsStream())
+            using (var output = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
             {
-                client.Headers[HttpRequestHeader.UserAgent] = "PasteIt-Updater";
-                client.DownloadFile(updateInfo.InstallerUrl, targetPath);
+                response.EnsureSuccessStatusCode();
+                installerStream.CopyTo(output);
             }
 
             return targetPath;
+        }
+
+        private static HttpClient CreateHttpClient()
+        {
+            var client = new HttpClient
+            {
+                Timeout = TimeSpan.FromMinutes(5)
+            };
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("PasteIt-Updater");
+            return client;
         }
 
         public void LaunchInstaller(string installerPath, bool silent)

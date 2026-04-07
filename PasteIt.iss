@@ -21,22 +21,26 @@ VersionInfoVersion={#AppVersion}
 
 [Files]
 ; Main service
-Source: "PasteIt\bin\Release\net48\PasteIt.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
-Source: "PasteIt\bin\Release\net48\PasteIt.exe.config"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
+Source: "PasteIt\bin\Release\net8.0-windows\PasteIt.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+Source: "PasteIt\bin\Release\net8.0-windows\PasteIt.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
+Source: "PasteIt\bin\Release\net8.0-windows\PasteIt.runtimeconfig.json"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 ; UI application
-Source: "PasteIt.UI\bin\Release\net48\PasteIt.UI.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
-Source: "PasteIt.UI\bin\Release\net48\PasteIt.UI.exe.config"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
+Source: "PasteIt.UI\bin\Release\net8.0-windows\PasteIt.UI.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+Source: "PasteIt.UI\bin\Release\net8.0-windows\PasteIt.UI.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
+Source: "PasteIt.UI\bin\Release\net8.0-windows\PasteIt.UI.runtimeconfig.json"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 ; Shell extension
-Source: "PasteItExtension\bin\Release\net48\PasteItExtension.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
-Source: "PasteItExtension\bin\Release\net48\SharpShell.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+Source: "PasteItExtension\bin\Release\net8.0-windows\PasteItExtension.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+Source: "PasteItExtension\bin\Release\net8.0-windows\PasteItExtension.comhost.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+Source: "PasteItExtension\bin\Release\net8.0-windows\SharpShell.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
 ; Core library
-Source: "PasteItExtension\bin\Release\net48\PasteIt.Core.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+Source: "PasteItExtension\bin\Release\net8.0-windows\PasteIt.Core.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
 ; Bundled FFmpeg
 Source: "ThirdParty\FFmpeg\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 Source: "ThirdParty\FFmpeg\LICENSE.txt"; DestDir: "{app}"; DestName: "ffmpeg-LICENSE.txt"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 Source: "ThirdParty\FFmpeg\README.txt"; DestDir: "{app}"; DestName: "ffmpeg-README.txt"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 ; Any other DLLs
-Source: "PasteIt\bin\Release\net48\*.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist; Excludes: "PasteIt.Core.dll,SharpShell.dll"
+Source: "PasteIt\bin\Release\net8.0-windows\*.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist; Excludes: "PasteIt.Core.dll,SharpShell.dll"
+Source: "PasteIt\bin\Release\net8.0-windows\*.json"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 
 [Icons]
 Name: "{group}\PasteIt"; Filename: "{app}\PasteIt.UI.exe"; Comment: "Open PasteIt History & Settings"
@@ -205,6 +209,8 @@ var
   InstallDir: String;
   RegAsm: String;
   DllPath: String;
+  ComHostPath: String;
+  RegSvr32: String;
 begin
   Result := '';
   NeedsRestart := False;
@@ -222,12 +228,22 @@ begin
 
   { 2. Unregister the shell extension if the shell bundle changed }
   DllPath := InstallDir + '\PasteItExtension.dll';
+  ComHostPath := InstallDir + '\PasteItExtension.comhost.dll';
   RegAsm := ExpandConstant('{win}') + '\Microsoft.NET\Framework64\v4.0.30319\regasm.exe';
+  RegSvr32 := ExpandConstant('{sys}') + '\regsvr32.exe';
 
-  if ShellExplorerRestartRequired and FileExists(DllPath) and FileExists(RegAsm) then
+  if ShellExplorerRestartRequired then
   begin
-    RunCmd('/c "' + RegAsm + '" "' + DllPath + '" /unregister 2>nul');
-    Sleep(1000);
+    if FileExists(DllPath) and FileExists(RegAsm) then
+    begin
+      RunCmd('/c "' + RegAsm + '" "' + DllPath + '" /unregister 2>nul');
+      Sleep(500);
+    end;
+    if FileExists(ComHostPath) and FileExists(RegSvr32) then
+    begin
+      RunCmd('/c "' + RegSvr32 + '" /u /s "' + ComHostPath + '" 2>nul');
+      Sleep(500);
+    end;
   end;
 
   { 3. Restart Explorer only when the shell bundle changed. }

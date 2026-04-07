@@ -2,10 +2,12 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 
 namespace PasteIt.Core
 {
+    [SupportedOSPlatform("windows")]
     public static class ExplorerHelper
     {
         private const string ExplorerClassName = "CabinetWClass";

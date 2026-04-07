@@ -1,7 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using SharpShell.Helpers;
 
 namespace PasteIt
 {
@@ -12,15 +12,15 @@ namespace PasteIt
 
         public static int Register(string? shellExtensionPath)
         {
-            return Execute(shellExtensionPath, (regAsm, path) => regAsm.Register64(path, true));
+            return Execute(shellExtensionPath, false);
         }
 
         public static int Unregister(string? shellExtensionPath)
         {
-            return Execute(shellExtensionPath, (regAsm, path) => regAsm.Unregister64(path));
+            return Execute(shellExtensionPath, true);
         }
 
-        private static int Execute(string? shellExtensionPath, Func<RegAsm, string, bool> action)
+        private static int Execute(string? shellExtensionPath, bool unregister)
         {
             var resolvedPath = ResolveShellExtensionPath(shellExtensionPath);
             if (string.IsNullOrWhiteSpace(resolvedPath) || !File.Exists(resolvedPath))
@@ -30,10 +30,22 @@ namespace PasteIt
 
             try
             {
-                var regAsm = new RegAsm();
-                if (!action(regAsm, resolvedPath))
+                var args = unregister ? $"/u /s \"{resolvedPath}\"" : $"/s \"{resolvedPath}\"";
+                using var process = Process.Start(new ProcessStartInfo
                 {
-                    return 1;
+                    FileName = "regsvr32.exe",
+                    Arguments = args,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+
+                if (process != null)
+                {
+                    process.WaitForExit();
+                    if (process.ExitCode != 0)
+                    {
+                        return 1;
+                    }
                 }
 
                 RefreshShellAssociations();
@@ -47,12 +59,11 @@ namespace PasteIt
 
         private static string ResolveShellExtensionPath(string? shellExtensionPath)
         {
-            if (!string.IsNullOrWhiteSpace(shellExtensionPath))
-            {
-                return shellExtensionPath!;
-            }
+            var path = !string.IsNullOrWhiteSpace(shellExtensionPath)
+                ? shellExtensionPath!
+                : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PasteItExtension.dll");
 
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PasteItExtension.dll");
+            return path.Replace(".dll", ".comhost.dll", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void RefreshShellAssociations()
