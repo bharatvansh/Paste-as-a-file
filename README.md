@@ -2,7 +2,7 @@
 
 **PasteIt** is a Windows utility that lets you save clipboard content directly as a file from Windows Explorer. You can trigger it from the Explorer right-click menu or with the global `Ctrl+Shift+V` hotkey when Explorer is focused.
 
-PasteIt currently targets **Windows x64** and is built on **.NET Framework 4.8**.
+PasteIt currently targets **Windows x64** and is built on **.NET Framework 8**.
 
 ## What It Can Paste
 
@@ -54,8 +54,8 @@ The installer copies the binaries, includes a bundled `ffmpeg.exe` plus its acco
 **Prerequisites**
 
 - Windows x64
-- .NET SDK that can build **.NET Framework 4.8** projects
-- Visual Studio 2022 Build Tools or Visual Studio 2022 with the **.NET Framework 4.8 targeting pack**
+- .NET SDK that can build **.NET Framework 8** projects
+- Visual Studio 2022 Build Tools or Visual Studio 2022 with the **.NET Framework 8 targeting pack**
 - Inno Setup 6 if you want to build the installer
 
 **Common commands**
