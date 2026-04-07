@@ -2,7 +2,7 @@
 
 **PasteIt** is a Windows utility that lets you save clipboard content directly as a file from Windows Explorer. You can trigger it from the Explorer right-click menu or with the global `Ctrl+Shift+V` hotkey when Explorer is focused.
 
-PasteIt currently targets **Windows x64** and is built on **.NET Framework 8**.
+PasteIt currently targets **Windows x64**; the upgraded projects are built on **.NET 8** (`net8.0-windows`), while the shell extension remains on **.NET Framework 4.8** (`net48`).
 
 ## What It Can Paste
 
