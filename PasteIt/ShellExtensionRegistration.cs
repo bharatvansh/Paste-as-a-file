@@ -48,13 +48,15 @@ namespace PasteIt
                     CreateNoWindow = true
                 });
 
-                if (process != null)
+                if (process == null)
                 {
-                    process.WaitForExit();
-                    if (process.ExitCode != 0)
-                    {
-                        return 1;
-                    }
+                    return 1;
+                }
+
+                process.WaitForExit();
+                if (process.ExitCode != 0)
+                {
+                    return 1;
                 }
 
                 RefreshShellAssociations();

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 
@@ -65,13 +66,16 @@ namespace PasteIt.Core
 
         private static HttpClient CreateHttpClient()
         {
-            var client = new HttpClient
+            var handler = new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            };
+
+            var client = new HttpClient(handler)
             {
                 Timeout = TimeSpan.FromSeconds(15)
             };
             client.DefaultRequestHeaders.UserAgent.ParseAdd("PasteIt-Updater");
-            client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip");
-            client.DefaultRequestHeaders.AcceptEncoding.ParseAdd("deflate");
             return client;
         }
 
