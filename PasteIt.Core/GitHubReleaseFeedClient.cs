@@ -10,6 +10,8 @@ namespace PasteIt.Core
     {
         internal const string DefaultLatestReleaseUrl = "https://api.github.com/repos/bharatvansh/Paste-as-a-file/releases/latest";
         internal const string DefaultAssetName = "PasteIt_Setup.exe";
+        // Intentionally shared for the lifetime of the process to enable connection reuse.
+        // This client is not disposed per GitHubReleaseFeedClient instance.
         private static readonly HttpClient HttpClient = CreateHttpClient();
 
         private readonly string _latestReleaseUrl;

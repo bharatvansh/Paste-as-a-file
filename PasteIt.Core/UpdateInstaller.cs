@@ -25,7 +25,7 @@ namespace PasteIt.Core
             var targetPath = Path.Combine(Path.GetTempPath(), fileName);
 
             using (var request = new HttpRequestMessage(HttpMethod.Get, updateInfo.InstallerUrl))
-            using (var response = HttpClient.Send(request))
+            using (var response = HttpClient.Send(request, HttpCompletionOption.ResponseHeadersRead))
             using (var installerStream = response.Content.ReadAsStream())
             using (var output = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
             {

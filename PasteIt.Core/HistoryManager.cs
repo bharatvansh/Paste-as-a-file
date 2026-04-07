@@ -9,6 +9,8 @@ namespace PasteIt.Core
 {
     public sealed class HistoryManager
     {
+        // History JSON is only stored locally under the app data directory.
+        // We preserve readable Unicode text here so previews/full text round-trip cleanly.
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping

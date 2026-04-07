@@ -63,7 +63,18 @@ namespace PasteIt
                 ? shellExtensionPath!
                 : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PasteItExtension.dll");
 
-            return path.Replace(".dll", ".comhost.dll", StringComparison.OrdinalIgnoreCase);
+            if (!path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            {
+                return path;
+            }
+
+            var directory = Path.GetDirectoryName(path);
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+            var comHostFileName = $"{fileNameWithoutExtension}.comhost.dll";
+
+            return string.IsNullOrEmpty(directory)
+                ? comHostFileName
+                : Path.Combine(directory, comHostFileName);
         }
 
         private static void RefreshShellAssociations()
