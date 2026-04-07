@@ -5,8 +5,8 @@ Thanks for considering a contribution! Here's how to get started.
 ## Prerequisites
 
 - **Windows x64**
-- .NET SDK that can build **.NET Framework 8** projects
-- Visual Studio 2022 (or Build Tools) with the **.NET Framework 8 targeting pack**
+- **.NET 8 SDK**
+- Visual Studio 2022 (or Build Tools) with the **.NET desktop development** workload / Windows Desktop tools for **.NET 8**
 - [Inno Setup 6](https://jrsoftware.org/isinfo.php) (only needed to build the installer)
 
 ## Getting Started
