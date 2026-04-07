@@ -1,6 +1,8 @@
 using System;
+using System.Drawing;
 using System.IO;
 using PasteIt.Core;
+using SixLabors.ImageSharp.Formats;
 using Xunit;
 
 namespace PasteIt.Core.Tests
@@ -173,6 +175,62 @@ namespace PasteIt.Core.Tests
                 Assert.Equal("Video (.webm)", result.DisplayType);
                 Assert.Equal(new byte[] { 99 }, File.ReadAllBytes(result.FilePath));
             }
+        }
+
+        [Theory]
+        [InlineData(".png", "image/png")]
+        [InlineData(".jpg", "image/jpeg")]
+        [InlineData(".webp", "image/webp")]
+        [InlineData(".bmp", "image/bmp")]
+        [InlineData(".gif", "image/gif")]
+        [InlineData(".tiff", "image/tiff")]
+        public void Save_WritesImageFormats_UsingExpectedEncoder(string extension, string expectedMimeType)
+        {
+            var saver = new FileSaver(DefaultSettings);
+            var now = new DateTime(2026, 2, 14, 15, 0, 0);
+
+            using (var bitmap = CreateBitmap())
+            using (var content = ClipboardContent.Image(bitmap))
+            {
+                var result = saver.Save(content, _tempDirectory, now, extension);
+
+                Assert.Equal("clipboard_2026-02-14_001" + extension, Path.GetFileName(result.FilePath));
+                Assert.Equal("Image (" + extension + ")", result.DisplayType);
+                Assert.True(File.Exists(result.FilePath));
+
+                var imageInfo = SixLabors.ImageSharp.Image.Identify(result.FilePath, out IImageFormat format);
+                Assert.NotNull(imageInfo);
+                Assert.NotNull(format);
+                Assert.Equal(expectedMimeType, format.DefaultMimeType);
+            }
+        }
+
+        [Fact]
+        public void Save_WritesIconImage_UsingIconExtension()
+        {
+            var saver = new FileSaver(DefaultSettings);
+            var now = new DateTime(2026, 2, 14, 15, 30, 0);
+
+            using (var bitmap = CreateBitmap())
+            using (var content = ClipboardContent.Image(bitmap))
+            {
+                var result = saver.Save(content, _tempDirectory, now, ".ico");
+
+                Assert.Equal("clipboard_2026-02-14_001.ico", Path.GetFileName(result.FilePath));
+                Assert.Equal("Image (.ico)", result.DisplayType);
+                Assert.True(File.Exists(result.FilePath));
+                Assert.NotEmpty(File.ReadAllBytes(result.FilePath));
+            }
+        }
+
+        private static Bitmap CreateBitmap()
+        {
+            var bitmap = new Bitmap(2, 2);
+            bitmap.SetPixel(0, 0, Color.Red);
+            bitmap.SetPixel(1, 0, Color.Blue);
+            bitmap.SetPixel(0, 1, Color.Green);
+            bitmap.SetPixel(1, 1, Color.White);
+            return bitmap;
         }
 
         public void Dispose()

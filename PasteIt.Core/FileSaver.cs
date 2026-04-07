@@ -10,7 +10,13 @@ using NAudio.MediaFoundation;
 using OggVorbisEncoder;
 using FlacBox;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Bmp;
+using SixLabors.ImageSharp.Formats.Gif;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Tiff;
 using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace PasteIt.Core
 {
@@ -445,56 +451,80 @@ namespace PasteIt.Core
             }
 
             var ext = Path.GetExtension(path);
-
-            // WebP requires SixLabors.ImageSharp since System.Drawing doesn't support it.
-            if (string.Equals(ext, ".webp", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(ext, ".ico", StringComparison.OrdinalIgnoreCase))
             {
-                SaveAsWebP(content.ImageContent, path);
+                SaveIcon(content.ImageContent, path);
                 return;
             }
 
-            var format = ResolveImageFormat(ext);
-
-            if (IsJpeg(ext))
+            using (var image = LoadImageSharpImage(content.ImageContent))
             {
-                var encoder = GetEncoder(ImageFormat.Jpeg);
-                if (encoder != null)
-                {
-                    var encoderParams = new EncoderParameters(1);
-                    encoderParams.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 95L);
-                    content.ImageContent.Save(path, encoder, encoderParams);
-                    return;
-                }
+                SaveWithImageSharp(image, ext, path);
             }
-
-            content.ImageContent.Save(path, format);
         }
 
-        private static void SaveAsWebP(System.Drawing.Image image, string path)
+        private static Image<Rgba32> LoadImageSharpImage(System.Drawing.Image image)
         {
             using (var ms = new MemoryStream())
             {
                 image.Save(ms, ImageFormat.Png);
                 ms.Position = 0;
-
-                using (var sharpImage = SixLabors.ImageSharp.Image.Load(ms))
-                {
-                    sharpImage.SaveAsWebp(path, new WebpEncoder { Quality = 90 });
-                }
+                return SixLabors.ImageSharp.Image.Load<Rgba32>(ms);
             }
+        }
+
+        private static void SaveWithImageSharp(Image<Rgba32> image, string extension, string path)
+        {
+            if (string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase))
+            {
+                image.Save(path, new PngEncoder());
+                return;
+            }
+
+            if (IsJpeg(extension))
+            {
+                image.Save(path, new JpegEncoder { Quality = 95 });
+                return;
+            }
+
+            if (string.Equals(extension, ".webp", StringComparison.OrdinalIgnoreCase))
+            {
+                image.Save(path, new WebpEncoder { Quality = 90 });
+                return;
+            }
+
+            if (string.Equals(extension, ".bmp", StringComparison.OrdinalIgnoreCase))
+            {
+                image.Save(path, new BmpEncoder());
+                return;
+            }
+
+            if (string.Equals(extension, ".gif", StringComparison.OrdinalIgnoreCase))
+            {
+                image.Save(path, new GifEncoder());
+                return;
+            }
+
+            if (string.Equals(extension, ".tiff", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(extension, ".tif", StringComparison.OrdinalIgnoreCase))
+            {
+                image.Save(path, new TiffEncoder());
+                return;
+            }
+
+            image.Save(path, new PngEncoder());
+        }
+
+        private static void SaveIcon(System.Drawing.Image image, string path)
+        {
+            var format = ResolveImageFormat(".ico");
+            image.Save(path, format);
         }
 
         private static ImageFormat ResolveImageFormat(string extension)
         {
             var map = new Dictionary<string, ImageFormat>(StringComparer.OrdinalIgnoreCase)
             {
-                { ".png", ImageFormat.Png },
-                { ".jpg", ImageFormat.Jpeg },
-                { ".jpeg", ImageFormat.Jpeg },
-                { ".bmp", ImageFormat.Bmp },
-                { ".gif", ImageFormat.Gif },
-                { ".tiff", ImageFormat.Tiff },
-                { ".tif", ImageFormat.Tiff },
                 { ".ico", ImageFormat.Icon },
             };
 
@@ -505,18 +535,6 @@ namespace PasteIt.Core
         {
             return string.Equals(extension, ".jpg", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(extension, ".jpeg", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static ImageCodecInfo? GetEncoder(ImageFormat format)
-        {
-            foreach (var codec in ImageCodecInfo.GetImageEncoders())
-            {
-                if (codec.FormatID == format.Guid)
-                {
-                    return codec;
-                }
-            }
-            return null;
         }
 
         private static void SaveUrlShortcut(ClipboardContent content, string path)
