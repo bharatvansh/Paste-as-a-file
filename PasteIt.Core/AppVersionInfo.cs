@@ -10,7 +10,7 @@ namespace PasteIt.Core
             var informationalVersion = GetInformationalVersion(assembly);
             if (!string.IsNullOrWhiteSpace(informationalVersion))
             {
-                return informationalVersion!;
+                return NormalizeDisplayVersion(informationalVersion!);
             }
 
             var version = GetVersion(assembly);
@@ -29,6 +29,22 @@ namespace PasteIt.Core
             return targetAssembly
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                 ?.InformationalVersion;
+        }
+
+        private static string NormalizeDisplayVersion(string informationalVersion)
+        {
+            if (string.IsNullOrWhiteSpace(informationalVersion))
+            {
+                return informationalVersion;
+            }
+
+            var separatorIndex = informationalVersion.IndexOf('+');
+            if (separatorIndex <= 0)
+            {
+                return informationalVersion;
+            }
+
+            return informationalVersion.Substring(0, separatorIndex);
         }
     }
 }

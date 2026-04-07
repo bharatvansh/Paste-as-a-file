@@ -44,8 +44,8 @@ namespace PasteIt.Core.Tests
             var checker = new UpdateChecker(
                 feedClient: new FakeFeedClient(new UpdateInfo
                 {
-                    VersionString = "1.1.0",
-                    Version = new Version(1, 1, 0),
+                    VersionString = "1.2.0",
+                    Version = new Version(1, 2, 0),
                     InstallerUrl = "https://example.test/PasteIt_Setup.exe",
                     ReleaseNotesUrl = "https://example.test/release"
                 }),
@@ -58,7 +58,7 @@ namespace PasteIt.Core.Tests
 
             Assert.True(result.IsUpdateAvailable);
             Assert.NotNull(result.UpdateInfo);
-            Assert.Equal("1.1.0", result.UpdateInfo!.VersionString);
+            Assert.Equal("1.2.0", result.UpdateInfo!.VersionString);
         }
 
         [Fact]
@@ -66,13 +66,13 @@ namespace PasteIt.Core.Tests
         {
             var settings = new AppSettings
             {
-                SkippedVersion = "1.1.0"
+                SkippedVersion = "1.2.0"
             };
             var checker = new UpdateChecker(
                 feedClient: new FakeFeedClient(new UpdateInfo
                 {
-                    VersionString = "1.1.0",
-                    Version = new Version(1, 1, 0),
+                    VersionString = "1.2.0",
+                    Version = new Version(1, 2, 0),
                     InstallerUrl = "https://example.test/PasteIt_Setup.exe",
                     ReleaseNotesUrl = "https://example.test/release"
                 }),
@@ -138,7 +138,7 @@ namespace PasteIt.Core.Tests
             var settings = new AppSettings
             {
                 LastUpdateCheckUtc = originalCheckTime,
-                SkippedVersion = "1.1.0"
+                SkippedVersion = "1.2.0"
             };
             var checker = new UpdateChecker(
                 feedClient: new ThrowingFeedClient(),
@@ -152,7 +152,7 @@ namespace PasteIt.Core.Tests
             Assert.False(result.IsUpdateAvailable);
             Assert.NotNull(result.ErrorMessage);
             Assert.Equal(originalCheckTime, settings.LastUpdateCheckUtc);
-            Assert.Equal("1.1.0", settings.SkippedVersion);
+            Assert.Equal("1.2.0", settings.SkippedVersion);
         }
 
         [Fact]

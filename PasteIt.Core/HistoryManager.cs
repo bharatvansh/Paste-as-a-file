@@ -1,14 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Encodings.Web;
 using System.Linq;
-using System.Web.Script.Serialization;
+using System.Text.Json;
 
 namespace PasteIt.Core
 {
     public sealed class HistoryManager
     {
-        private readonly JavaScriptSerializer _serializer = new JavaScriptSerializer();
+        // History JSON is only stored locally under the app data directory.
+        // We preserve readable Unicode text here so previews/full text round-trip cleanly.
+        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
         private readonly object _lock = new object();
 
         public void AddEntry(HistoryEntry entry)
@@ -104,7 +111,7 @@ namespace PasteIt.Core
                     return new List<HistoryEntry>();
                 }
 
-                return _serializer.Deserialize<List<HistoryEntry>>(json) ?? new List<HistoryEntry>();
+                return JsonSerializer.Deserialize<List<HistoryEntry>>(json, JsonOptions) ?? new List<HistoryEntry>();
             }
             catch
             {
@@ -117,7 +124,7 @@ namespace PasteIt.Core
             try
             {
                 Directory.CreateDirectory(DataDirectory);
-                var json = _serializer.Serialize(entries);
+                var json = JsonSerializer.Serialize(entries, JsonOptions);
                 File.WriteAllText(HistoryFilePath, json);
             }
             catch

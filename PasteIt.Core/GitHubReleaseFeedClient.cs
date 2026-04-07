@@ -2,7 +2,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Web.Script.Serialization;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace PasteIt.Core
 {
@@ -10,6 +11,9 @@ namespace PasteIt.Core
     {
         internal const string DefaultLatestReleaseUrl = "https://api.github.com/repos/bharatvansh/Paste-as-a-file/releases/latest";
         internal const string DefaultAssetName = "PasteIt_Setup.exe";
+        // Intentionally shared for the lifetime of the process to enable connection reuse.
+        // This client is not disposed per GitHubReleaseFeedClient instance.
+        private static readonly HttpClient HttpClient = CreateHttpClient();
 
         private readonly string _latestReleaseUrl;
         private readonly string _expectedAssetName;
@@ -28,27 +32,51 @@ namespace PasteIt.Core
 
         public UpdateInfo? GetLatestRelease()
         {
-            var request = WebRequest.CreateHttp(_latestReleaseUrl);
-            request.Method = "GET";
-            request.Accept = "application/vnd.github+json";
-            request.UserAgent = "PasteIt-Updater";
-            request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-            request.Timeout = 15000;
-
-            using (var response = (HttpWebResponse)request.GetResponse())
-            using (var stream = response.GetResponseStream())
-            using (var reader = new StreamReader(stream ?? Stream.Null))
+            using (var request = new HttpRequestMessage(HttpMethod.Get, _latestReleaseUrl))
             {
-                var json = reader.ReadToEnd();
-                if (string.IsNullOrWhiteSpace(json))
-                {
-                    return null;
-                }
+                request.Headers.Accept.ParseAdd("application/vnd.github+json");
 
-                var serializer = new JavaScriptSerializer();
-                var dto = serializer.Deserialize<GitHubReleaseDto>(json);
-                return TryMap(dto, _expectedAssetName);
+#if NET48
+                using (var response = HttpClient.SendAsync(request).GetAwaiter().GetResult())
+#else
+                using (var response = HttpClient.Send(request))
+#endif
+                {
+                    response.EnsureSuccessStatusCode();
+
+#if NET48
+                    using (var stream = response.Content.ReadAsStreamAsync().GetAwaiter().GetResult())
+#else
+                    using (var stream = response.Content.ReadAsStream())
+#endif
+                    using (var reader = new StreamReader(stream ?? Stream.Null))
+                    {
+                        var json = reader.ReadToEnd();
+                        if (string.IsNullOrWhiteSpace(json))
+                        {
+                            return null;
+                        }
+
+                        var dto = JsonSerializer.Deserialize<GitHubReleaseDto>(json);
+                        return TryMap(dto, _expectedAssetName);
+                    }
+                }
             }
+        }
+
+        private static HttpClient CreateHttpClient()
+        {
+            var handler = new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            };
+
+            var client = new HttpClient(handler)
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("PasteIt-Updater");
+            return client;
         }
 
         internal static UpdateInfo? TryMap(GitHubReleaseDto? dto, string expectedAssetName)

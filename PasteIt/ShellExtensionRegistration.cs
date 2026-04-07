@@ -1,7 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using SharpShell.Helpers;
 
 namespace PasteIt
 {
@@ -12,15 +12,15 @@ namespace PasteIt
 
         public static int Register(string? shellExtensionPath)
         {
-            return Execute(shellExtensionPath, (regAsm, path) => regAsm.Register64(path, true));
+            return Execute(shellExtensionPath, false);
         }
 
         public static int Unregister(string? shellExtensionPath)
         {
-            return Execute(shellExtensionPath, (regAsm, path) => regAsm.Unregister64(path));
+            return Execute(shellExtensionPath, true);
         }
 
-        private static int Execute(string? shellExtensionPath, Func<RegAsm, string, bool> action)
+        private static int Execute(string? shellExtensionPath, bool unregister)
         {
             var resolvedPath = ResolveShellExtensionPath(shellExtensionPath);
             if (string.IsNullOrWhiteSpace(resolvedPath) || !File.Exists(resolvedPath))
@@ -30,8 +30,31 @@ namespace PasteIt
 
             try
             {
-                var regAsm = new RegAsm();
-                if (!action(regAsm, resolvedPath))
+                var regAsmPath = ResolveRegAsmPath();
+                if (string.IsNullOrWhiteSpace(regAsmPath) || !File.Exists(regAsmPath))
+                {
+                    return 1;
+                }
+
+                var args = unregister
+                    ? $"/u \"{resolvedPath}\""
+                    : $"/codebase \"{resolvedPath}\"";
+
+                using var process = Process.Start(new ProcessStartInfo
+                {
+                    FileName = regAsmPath,
+                    Arguments = args,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+
+                if (process == null)
+                {
+                    return 1;
+                }
+
+                process.WaitForExit();
+                if (process.ExitCode != 0)
                 {
                     return 1;
                 }
@@ -47,12 +70,22 @@ namespace PasteIt
 
         private static string ResolveShellExtensionPath(string? shellExtensionPath)
         {
-            if (!string.IsNullOrWhiteSpace(shellExtensionPath))
+            return !string.IsNullOrWhiteSpace(shellExtensionPath)
+                ? shellExtensionPath!
+                : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PasteItExtension.dll");
+        }
+
+        private static string? ResolveRegAsmPath()
+        {
+            var windowsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            var framework64 = Path.Combine(windowsDirectory, "Microsoft.NET", "Framework64", "v4.0.30319", "regasm.exe");
+            if (File.Exists(framework64))
             {
-                return shellExtensionPath!;
+                return framework64;
             }
 
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PasteItExtension.dll");
+            var framework = Path.Combine(windowsDirectory, "Microsoft.NET", "Framework", "v4.0.30319", "regasm.exe");
+            return File.Exists(framework) ? framework : null;
         }
 
         private static void RefreshShellAssociations()

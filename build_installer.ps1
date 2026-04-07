@@ -37,14 +37,43 @@ if (-not $DotnetCommand) {
     exit 1
 }
 
-Write-Host "Compiling PasteIt Solution (Release Mode)..." -ForegroundColor Cyan
+$InstallerArtifactsRoot = Join-Path $PSScriptRoot ".installer-artifacts"
+$BaseOutputPath = Join-Path $InstallerArtifactsRoot "bin\"
+$ServicePublishDir = Join-Path $InstallerArtifactsRoot "service-publish\"
+$UiPublishDir = Join-Path $InstallerArtifactsRoot "ui-publish\"
+
+if (Test-Path $InstallerArtifactsRoot) {
+    Remove-Item $InstallerArtifactsRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+New-Item -ItemType Directory -Path $InstallerArtifactsRoot -Force | Out-Null
+
+Write-Host "Building shell extension (net48)..." -ForegroundColor Cyan
 Push-Location $PSScriptRoot
 
-& $DotnetCommand build .\PasteIt.sln -c Release
+& $DotnetCommand build .\PasteItExtension\PasteItExtension.csproj -c Release -f net48
 
 if ($LASTEXITCODE -ne 0) {
     Pop-Location
-    Write-Error "dotnet build failed. Installer will not be built."
+    Write-Error "Shell extension build failed. Installer will not be built."
+    exit 1
+}
+
+Write-Host "Publishing PasteIt service (net8.0-windows, win-x64, self-contained)..." -ForegroundColor Cyan
+& $DotnetCommand publish .\PasteIt\PasteIt.csproj -c Release -r win-x64 --self-contained true "-p:BaseOutputPath=$BaseOutputPath" "-p:PublishDir=$ServicePublishDir"
+
+if ($LASTEXITCODE -ne 0) {
+    Pop-Location
+    Write-Error "PasteIt publish failed. Installer will not be built."
+    exit 1
+}
+
+Write-Host "Publishing PasteIt UI (net8.0-windows, win-x64, self-contained)..." -ForegroundColor Cyan
+& $DotnetCommand publish .\PasteIt.UI\PasteIt.UI.csproj -c Release -r win-x64 --self-contained true "-p:BaseOutputPath=$BaseOutputPath" "-p:PublishDir=$UiPublishDir"
+
+if ($LASTEXITCODE -ne 0) {
+    Pop-Location
+    Write-Error "PasteIt UI publish failed. Installer will not be built."
     exit 1
 }
 
@@ -69,7 +98,11 @@ if (-not $InnoSetupCompiler) {
 
 Write-Host ""
 Write-Host "Building PasteIt_Setup.exe using Inno Setup..." -ForegroundColor Cyan
-& $InnoSetupCompiler "/DAppVersion=$AppVersion" .\PasteIt.iss
+
+$ServicePublishDirForInno = [System.IO.Path]::GetFullPath($ServicePublishDir).TrimEnd('\')
+$UiPublishDirForInno = [System.IO.Path]::GetFullPath($UiPublishDir).TrimEnd('\')
+
+& $InnoSetupCompiler "/DAppVersion=$AppVersion" "/DServicePublishDir=$ServicePublishDirForInno" "/DUiPublishDir=$UiPublishDirForInno" .\PasteIt.iss
 
 if ($LASTEXITCODE -ne 0) {
     Pop-Location

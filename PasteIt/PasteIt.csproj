@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>PasteIt</AssemblyName>
@@ -10,11 +10,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PasteIt.Core\PasteIt.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" PrivateAssets="all" />
-    <PackageReference Include="SharpShell" Version="2.7.2" />
   </ItemGroup>
 
   <ItemGroup>

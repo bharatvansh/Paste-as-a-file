@@ -2,10 +2,16 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices;
+#if NET5_0_OR_GREATER
+using System.Runtime.Versioning;
+#endif
 using System.Text;
 
 namespace PasteIt.Core
 {
+#if NET5_0_OR_GREATER
+    [SupportedOSPlatform("windows")]
+#endif
     public static class ExplorerHelper
     {
         private const string ExplorerClassName = "CabinetWClass";

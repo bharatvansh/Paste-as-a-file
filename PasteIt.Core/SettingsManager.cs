@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using System.Web.Script.Serialization;
+using System.Text.Json;
 
 namespace PasteIt.Core
 {
@@ -14,7 +14,7 @@ namespace PasteIt.Core
         private static readonly string SettingsFilePath =
             Path.Combine(DataDirectory, "settings.json");
 
-        private readonly JavaScriptSerializer _serializer = new JavaScriptSerializer();
+
 
         public AppSettings Load()
         {
@@ -31,7 +31,7 @@ namespace PasteIt.Core
                     return new AppSettings();
                 }
 
-                return _serializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
             }
             catch
             {
@@ -49,7 +49,7 @@ namespace PasteIt.Core
             try
             {
                 Directory.CreateDirectory(DataDirectory);
-                var json = _serializer.Serialize(settings);
+                var json = JsonSerializer.Serialize(settings);
                 File.WriteAllText(SettingsFilePath, json);
             }
             catch

@@ -1,5 +1,13 @@
 #ifndef AppVersion
-#define AppVersion "1.1.0"
+#define AppVersion "1.2.0"
+#endif
+
+#ifndef ServicePublishDir
+#define ServicePublishDir "PasteIt\\bin\\Release\\net8.0-windows\\win-x64\\publish"
+#endif
+
+#ifndef UiPublishDir
+#define UiPublishDir "PasteIt.UI\\bin\\Release\\net8.0-windows\\win-x64\\publish"
 #endif
 
 [Setup]
@@ -20,23 +28,21 @@ SetupIconFile=PasteIt.Core\Resources\logo.ico
 VersionInfoVersion={#AppVersion}
 
 [Files]
-; Main service
-Source: "PasteIt\bin\Release\net48\PasteIt.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
-Source: "PasteIt\bin\Release\net48\PasteIt.exe.config"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
-; UI application
-Source: "PasteIt.UI\bin\Release\net48\PasteIt.UI.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
-Source: "PasteIt.UI\bin\Release\net48\PasteIt.UI.exe.config"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
+; Main service runtime payload (.NET 8 self-contained)
+Source: "{#ServicePublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion restartreplace recursesubdirs createallsubdirs; Excludes: "ffmpeg.exe,ffmpeg-LICENSE.txt,ffmpeg-README.txt"
+; UI entrypoint files (.NET 8 self-contained)
+Source: "{#UiPublishDir}\PasteIt.UI*"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 ; Shell extension
-Source: "PasteItExtension\bin\Release\net48\PasteItExtension.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
-Source: "PasteItExtension\bin\Release\net48\SharpShell.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
-; Core library
-Source: "PasteItExtension\bin\Release\net48\PasteIt.Core.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace
+Source: "PasteItExtension\bin\Release\net48\PasteItExtension.dll"; DestDir: "{app}\ShellExtension"; Flags: ignoreversion restartreplace
+Source: "PasteItExtension\bin\Release\net48\SharpShell.dll"; DestDir: "{app}\ShellExtension"; Flags: ignoreversion restartreplace
+; Shell extension runtime dependency (.NET Framework build)
+Source: "PasteItExtension\bin\Release\net48\PasteIt.Core.dll"; DestDir: "{app}\ShellExtension"; Flags: ignoreversion restartreplace
 ; Bundled FFmpeg
 Source: "ThirdParty\FFmpeg\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 Source: "ThirdParty\FFmpeg\LICENSE.txt"; DestDir: "{app}"; DestName: "ffmpeg-LICENSE.txt"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
 Source: "ThirdParty\FFmpeg\README.txt"; DestDir: "{app}"; DestName: "ffmpeg-README.txt"; Flags: ignoreversion restartreplace skipifsourcedoesntexist
-; Any other DLLs
-Source: "PasteIt\bin\Release\net48\*.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace skipifsourcedoesntexist; Excludes: "PasteIt.Core.dll,SharpShell.dll"
+; Additional shell extension dependencies
+Source: "PasteItExtension\bin\Release\net48\*.dll"; DestDir: "{app}\ShellExtension"; Flags: ignoreversion restartreplace skipifsourcedoesntexist; Excludes: "PasteItExtension.dll,PasteIt.Core.dll,SharpShell.dll"
 
 [Icons]
 Name: "{group}\PasteIt"; Filename: "{app}\PasteIt.UI.exe"; Comment: "Open PasteIt History & Settings"
@@ -51,7 +57,7 @@ Filename: "{app}\PasteIt.exe"; Parameters: "--service"; Flags: nowait runasorigi
 Filename: "{cmd}"; Parameters: "/c taskkill /f /im PasteIt.exe"; Flags: runhidden; RunOnceId: "KillPasteItExe"
 Filename: "{cmd}"; Parameters: "/c taskkill /f /im PasteIt.UI.exe"; Flags: runhidden; RunOnceId: "KillPasteItUiExe"
 ; Unregister shell extension
-Filename: "{app}\PasteIt.exe"; Parameters: "--unregister-shell-extension ""{app}\PasteItExtension.dll"""; WorkingDir: "{app}"; Flags: runhidden waituntilterminated; RunOnceId: "UnregisterPasteItShellExtension"
+Filename: "{app}\PasteIt.exe"; Parameters: "--unregister-shell-extension ""{app}\ShellExtension\PasteItExtension.dll"""; WorkingDir: "{app}"; Flags: runhidden waituntilterminated; RunOnceId: "UnregisterPasteItShellExtension"
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
@@ -85,7 +91,9 @@ begin
   ShellExplorerRestartRequired :=
     FileExists(InstallDir + '\PasteItExtension.dll') or
     FileExists(InstallDir + '\SharpShell.dll') or
-    FileExists(InstallDir + '\PasteIt.Core.dll');
+    FileExists(InstallDir + '\ShellExtension\PasteItExtension.dll') or
+    FileExists(InstallDir + '\ShellExtension\SharpShell.dll') or
+    FileExists(InstallDir + '\ShellExtension\PasteIt.Core.dll');
 end;
 
 function IsExplorerRunning(): Boolean;
@@ -221,7 +229,11 @@ begin
   DetectShellUpgradeState(InstallDir);
 
   { 2. Unregister the shell extension if the shell bundle changed }
-  DllPath := InstallDir + '\PasteItExtension.dll';
+  DllPath := InstallDir + '\ShellExtension\PasteItExtension.dll';
+  if not FileExists(DllPath) then
+  begin
+    DllPath := InstallDir + '\PasteItExtension.dll';
+  end;
   RegAsm := ExpandConstant('{win}') + '\Microsoft.NET\Framework64\v4.0.30319\regasm.exe';
 
   if ShellExplorerRestartRequired and FileExists(DllPath) and FileExists(RegAsm) then
@@ -250,6 +262,9 @@ begin
   MoveLockedFile(InstallDir + '\PasteItExtension.dll');
   MoveLockedFile(InstallDir + '\SharpShell.dll');
   MoveLockedFile(InstallDir + '\PasteIt.Core.dll');
+  MoveLockedFile(InstallDir + '\ShellExtension\PasteItExtension.dll');
+  MoveLockedFile(InstallDir + '\ShellExtension\SharpShell.dll');
+  MoveLockedFile(InstallDir + '\ShellExtension\PasteIt.Core.dll');
   MoveLockedFile(InstallDir + '\PasteIt.exe');
   MoveLockedFile(InstallDir + '\PasteIt.UI.exe');
 end;
@@ -265,6 +280,9 @@ begin
     DeleteFile(InstallDir + '\PasteItExtension.dll.old');
     DeleteFile(InstallDir + '\SharpShell.dll.old');
     DeleteFile(InstallDir + '\PasteIt.Core.dll.old');
+    DeleteFile(InstallDir + '\ShellExtension\PasteItExtension.dll.old');
+    DeleteFile(InstallDir + '\ShellExtension\SharpShell.dll.old');
+    DeleteFile(InstallDir + '\ShellExtension\PasteIt.Core.dll.old');
     DeleteFile(InstallDir + '\PasteIt.exe.old');
     DeleteFile(InstallDir + '\PasteIt.UI.exe.old');
 
@@ -279,12 +297,12 @@ begin
         ShowInstallStatus('Registering shell extension...');
       end;
 
-      if not RunPasteIt('--register-shell-extension "' + InstallDir + '\PasteItExtension.dll"') then
+      if not RunPasteIt('--register-shell-extension "' + InstallDir + '\ShellExtension\PasteItExtension.dll"') then
       begin
         StartExplorerIfNeeded();
         RaiseException(
           'PasteIt setup could not register the Windows Explorer shell extension.' + #13#10#13#10 +
-          'The install is incomplete. Please rerun the installer as Administrator.');
+          'The install is incomplete. Please close Windows Explorer and run setup again.');
       end;
 
       StartExplorerIfNeeded();
